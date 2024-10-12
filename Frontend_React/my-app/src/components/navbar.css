@@ -1,0 +1,49 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: black;
+    color: white;
+  }
+  
+  .navbar-text {
+    font-weight: bold;
+  }
+  
+  .navbar-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .alert-button {
+    background-color: red;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .logout-button {
+    background-color: #333;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .alert-button:hover, .logout-button:hover {
+    background-color: #444;
+  }
+
+  .alert-button, .logout-button {
+    /* ... (existing styles) */
+    padding: 10px; /* Adjust padding if needed */
+  }
+  
+  .alert-button .alert-icon,
+  .logout-button .logout-icon {
+    width: 20px; /* Adjust icon size as needed */
+    height: 20px;
+    margin-right: 5px; /* Add spacing between icon and text */
+  }
