@@ -11,6 +11,7 @@ import DateInput from "./leaveLayout/leaveInput";
 import LeaveEditableTable from "./leaveLayout/LeaveApply";
 import LeavePage from "./leaveLayout/leavePage";
 import TimesheetTablePage from "./timesheetLayout/timesheetPage";
+import DashboardPage from './dashboardLayout/dashboardPage'
 
 // function App() {
 //   const [openSidebarToggle, setOpenSidebarToggle] = useState(false);
@@ -60,7 +61,7 @@ const App = () => {
 
         <div className="content-area">
           <Routes>
-            <Route path="/dashboard" element={<div></div>} />
+            <Route path="/dashboard" element={<DashboardPage/>} />
 
             <Route path="/timesheet" element={<TimesheetTablePage/>} />
 
