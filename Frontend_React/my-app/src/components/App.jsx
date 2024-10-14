@@ -12,6 +12,7 @@ import LeaveEditableTable from "./leaveLayout/LeaveApply";
 import LeavePage from "./leaveLayout/leavePage";
 import TimesheetTablePage from "./timesheetLayout/timesheetPage";
 import DashboardPage from './dashboardLayout/dashboardPage'
+import ProjectForm from './projectLayout/projectPage'
 
 // function App() {
 //   const [openSidebarToggle, setOpenSidebarToggle] = useState(false);
@@ -69,7 +70,7 @@ const App = () => {
 
             <Route path="/ticket" element={<TicketPage/>} />
 
-            <Route path="/project" element={<div></div>} />
+            <Route path="/project" element={<ProjectForm/>} />
 
             <Route path="/employee" element={<div></div>} />
           </Routes>
