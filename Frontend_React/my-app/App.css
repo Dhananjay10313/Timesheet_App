@@ -1,0 +1,27 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* Prevents scrolling of the entire app layout */
+}
+
+.content-area {
+  flex-grow: 1; /* Allow it to take up available space */
+  padding: 20px; /* Optional padding */
+  overflow-y: auto; /* Makes the content area scrollable */
+  background-color: #f5f5f5; /* Light gray background for content */
+  margin-left: 240px; /* Sidebar width */
+  margin-top: 64px; /* Navbar height */
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: #1c1c1e; /* Dark background */
+}
+
+.navbar {
+  height: 64px; /* Adjust this based on your Navbar height */
+  position: fixed; /* Keep Navbar fixed at the top */
+  width: 100%; /* Full width */
+  z-index: 1000; /* Ensure it sits above other elements */
+}
