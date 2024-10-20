@@ -47,6 +47,7 @@ const Navbar = ({ toggleSidebar }) => {
           </IconButton>
         </Box>
       </Toolbar>
+      
     </AppBar>
   );
 };

@@ -132,6 +132,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       </Box>
     </Drawer>
   );
+  
 };
 
 export default Sidebar;
