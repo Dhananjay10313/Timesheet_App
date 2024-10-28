@@ -30,8 +30,6 @@
 // // //           );
 // // //     }
 
-
-
 // // async function fetchLeaveData(emp_id) {
 // //   try {
 // //     const response = await axios.post(
@@ -48,7 +46,6 @@
 // //   }
 // // }
 
-
 // // async function fetchLeaveRemainingData(emp_id) {
 // //   try {
 // //     const response = await axios.post(
@@ -64,9 +61,6 @@
 // //     return [];
 // //   }
 // // }
-
-
-
 
 // // function LeaveInputBox() {
 // //   const [startDate, setStartDate] = useState(new Date());
@@ -106,13 +100,11 @@
 // //     //     console.log("balance data",balanceData);
 // //     //   });
 
-
 // //     const fetchData = async () => {
 // //       const leaveResponse = await fetchLeaveData(1);
 // //       // console.log("Leave data: ", leaveResponse);
 // //       setData(leaveResponse);
 // //       console.log("Leave Data: ", data);
-      
 
 // //       // const formattedDataList = timesheetResponse.map((item) => ({
 // //       //   id: item.id,
@@ -128,7 +120,7 @@
 // //         const remainingResponse = await fetchLeaveRemainingData(1);
 // //         setBalanceData(remainingResponse);
 // //         console.log("remaining data", balanceData)
-        
+
 // //       } catch (error) {
 // //         console.error("Error fetching approval data:", error);
 // //       }
@@ -137,8 +129,6 @@
 // //     fetchData();
 
 // //   }, []);
-
-  
 
 // //   const handleStartDateChange = (date) => {
 // //     setStartDate(date);
@@ -309,8 +299,6 @@
 // // //     </div>
 // // //   );
 
-
-
 // import React, { useState, useEffect } from "react";
 // import DatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
@@ -421,7 +409,6 @@
 //     const formattedDate1 = dateObject1.toISOString().slice(0, 10);
 //     console.log(typeof formattedDate1);
 
-    
 //     setEndDate(formattedDate1);
 
 //     const formData = {
@@ -527,9 +514,6 @@
 
 // export default LeaveInputBox;
 
-
-
-
 import React, { useState, useEffect } from "react";
 import {
   TextField,
@@ -550,7 +534,10 @@ import "react-toastify/dist/ReactToastify.css";
 
 async function fetchLeaveData(emp_id) {
   try {
-    const response = await axios.post("http://localhost:8000/getLeaveDataByUser", { emp_id });
+    const response = await axios.post(
+      "http://localhost:8000/getLeaveDataByUser",
+      { emp_id }
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching leave data:", error);
@@ -560,7 +547,10 @@ async function fetchLeaveData(emp_id) {
 
 async function fetchLeaveRemainingData(emp_id) {
   try {
-    const response = await axios.post("http://localhost:8000/getLeavesRemaining", { emp_id });
+    const response = await axios.post(
+      "http://localhost:8000/getLeavesRemaining",
+      { emp_id }
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching leave remaining data:", error);
@@ -575,55 +565,79 @@ function LeaveInputBox() {
   const [selectedOption, setSelectedOption] = useState("");
   const [balanceData, setBalanceData] = useState([]);
   const [data, setData] = useState([]);
-  
+
+  const storedData = localStorage.getItem("userData");
+  const userState = storedData ? JSON.parse(storedData) : null;
+  const employee_id = userState["emp_id"];
+  const manager_id = userState["manager_id"];
+
   useEffect(() => {
     const fetchData = async () => {
-      const leaveResponse = await fetchLeaveData(1); // Fetch for employee ID 1 (you can replace with dynamic value)
+      const leaveResponse = await fetchLeaveData(employee_id);
       setData(leaveResponse);
 
-      const remainingResponse = await fetchLeaveRemainingData(1);
+      const remainingResponse = await fetchLeaveRemainingData(employee_id);
       setBalanceData(remainingResponse);
     };
 
     fetchData();
   }, []);
 
-  useEffect(()=>{
-    console.log("balance Data", balanceData)
-  },[balanceData])
+  useEffect(() => {
+    console.log("balance Data", balanceData);
+  }, [balanceData]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    const leave_id = Math.floor(Math.random() * (10000 - 1 + 1)) + 1;
     const formattedStartDate = startDate.toISOString().slice(0, 10);
     const formattedEndDate = endDate?.toISOString().slice(0, 10);
 
-    const daysRequested = Math.abs(endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
+    const daysRequested =
+      Math.abs(endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
 
-    const selectedData = balanceData.find((item) => item.t_id == selectedOption);
+    const selectedData = balanceData.find(
+      (item) => item.t_id == selectedOption
+    );
 
-    console.log("selectedData", selectedData)
     if (selectedData?.balance < daysRequested) {
-      toast.error("Specified holidays not available");
+      toast.error("Not enough holidays of this type available");
     } else {
-      // Post the leave application and update remaining leaves
       await axios.post("http://localhost:8000/addLeaveDataToTable", {
+        leave_id: leave_id,
         start_time: formattedStartDate,
         end_time: formattedEndDate,
         reason,
         t_id: parseInt(selectedOption),
         status: 1,
-        manager_id: 1,
-        employee_id: 1,
+        manager_id: manager_id,
+        employee_id: employee_id,
       });
 
       await axios.post("http://localhost:8000/updateRemainingLeaves", {
-        emp_id: 1, // Adjust based on current user
+        emp_id: employee_id,
         t_id: parseInt(selectedOption),
         days: parseInt(daysRequested),
       });
 
-      setData([...data, { start_date: formattedStartDate, end_date: formattedEndDate, reason, t_id: parseInt(selectedOption), status: 1, leave_id: Math.floor(Math.random() * (10000 - 1 + 1)) + 1}]);
+      setData([
+        ...data,
+        {
+          start_date: formattedStartDate,
+          end_date: formattedEndDate,
+          reason,
+          t_id: parseInt(selectedOption),
+          status: 1,
+          leave_id: leave_id,
+        },
+      ]);
+
+      // Reset the input fields
+      setStartDate(dayjs());
+      setEndDate(null);
+      setReason("");
+      setSelectedOption("");
     }
   };
 
@@ -633,7 +647,6 @@ function LeaveInputBox() {
       <div style={{ padding: "20px" }}>
         <h2>Apply for Leave</h2>
 
-        {/* Reason Input */}
         <TextField
           label="Reason for Leave"
           value={reason}
@@ -642,25 +655,23 @@ function LeaveInputBox() {
           margin="normal"
         />
 
-        {/* Date Pickers for Leave Start and End Date */}
         <div style={{ display: "flex", gap: "20px", marginBottom: "1px" }}>
           <DatePicker
             label="Start Date"
             value={startDate}
             onChange={(newDate) => setStartDate(newDate)}
-            minDate={dayjs()} // Ensure the start date cannot be before today
+            minDate={dayjs()}
             renderInput={(params) => <TextField {...params} fullWidth />}
           />
           <DatePicker
             label="End Date"
             value={endDate}
             onChange={(newDate) => setEndDate(newDate)}
-            minDate={startDate || dayjs()} // Ensure the end date cannot be before the start date
+            minDate={startDate || dayjs()}
             renderInput={(params) => <TextField {...params} fullWidth />}
           />
         </div>
 
-        {/* Leave Type Selector */}
         <FormControl fullWidth margin="normal">
           <InputLabel>Select Leave Type</InputLabel>
           <Select
@@ -670,22 +681,18 @@ function LeaveInputBox() {
             <MenuItem value="1">Sick Leave</MenuItem>
             <MenuItem value="2">Casual Leave</MenuItem>
             <MenuItem value="3">Paid Leave</MenuItem>
-            {/* Add more leave types as needed */}
           </Select>
         </FormControl>
 
-        {/* Submit Button */}
         <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Submit Leave Application
+          Submit
         </Button>
       </div>
 
-      {/* Display Leave Data */}
       <LeaveEditableTable data={data} />
-      <ApproveLeaveTable />
+      {/* <ApproveLeaveTable /> */}
     </LocalizationProvider>
   );
 }
 
 export default LeaveInputBox;
-

@@ -20,6 +20,64 @@ from typing import Optional
 from sqlalchemy import extract, text
 from sqlalchemy import update
 
+################################################################
+import logging
+import json
+from datetime import datetime
+from pytz import UTC
+
+# Create a custom logging handler
+class JsonFileHandler(logging.FileHandler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        with open(self.baseFilename, 'a') as f:
+            f.write(log_entry + '\n')
+
+# # Set up the logger
+logger = logging.getLogger('jsonLogger')
+logger.setLevel(logging.DEBUG)
+
+# # Create a file handler that logs messages in JSON format
+json_handler = JsonFileHandler('json_logs.log')
+json_handler.setLevel(logging.DEBUG)
+
+# # Create a custom formatter
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            'Username': record.username,
+            'Log_id': record.log_id,
+            'Timestamp': datetime.now(UTC).isoformat(),
+            'Values': record.values
+        }
+        return json.dumps(log_record)
+
+json_handler.setFormatter(JsonFormatter())
+logger.addHandler(json_handler)
+
+# Log messages with the fixed JSON structure
+def log_error(whatfailed,reason):
+    logger.info('', extra={
+        'username': 'dhananjay',
+        'log_id': 1,
+        'values': {
+            'iserrorlog':1,
+            'whatfailed': whatfailed,
+            'reason':reason
+        }
+    })
+
+def log_it(message):
+    logger.info('', extra={
+        'username': 'dhananjay',
+        'log_id': 1,
+        'values': {
+            'iserrorlog':0,
+            'message':message
+        }
+    })
+################################################################
+
 
 app = FastAPI()
 
@@ -108,9 +166,11 @@ class userBase(BaseModel):
     emp_id: Optional[int] = None
     manager_id: Optional[int] = None
     ap_id: Optional[int] = None
+    project_id: Optional[int] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     password: Optional[str] = None
+    timesheet_id: Optional[int] = None
     
     
 
@@ -221,21 +281,29 @@ def get_timsheet_data_by_user(current_user: userBase, db: Session = Depends(get_
     return result_list
 
 @app.post("/getTimesheetApprovalRequestByManager")
-def get_timesheet_data_by_manager(current_user: userBase, db: Session = Depends(get_db)):
-    manager_id=current_user.manager_id
+def get_timesheet_data_by_manager(req: userBase, db: Session = Depends(get_db)):
+    # manager_id=req.manager_id
 
-    timsheet_data_user = db.query(TimesheetApproval).filter(TimesheetApproval.manager_id == manager_id)
+    # timsheet_data_user = db.query(TimesheetApproval).filter(TimesheetApproval.manager_id == manager_id)
+    # timsheet_data_user = db.execute(text("SELECT * FROM timesheet WHERE timesheet.manager_id = :user_id and timesheet.start_time>= :time1 and timesheet.end_time<= :time2 ORDER BY timesheet.start_time"), {'user_id': req.manager_id, "time1":req.start_time, "time2":req.end_time}).fetchall()
+
+    timsheet_data_user = db.execute(text("select employee_id, ap_id, created_at, name, status from employee a join timesheetApproval b on a.empid=b.employee_id where a.manager_id=:user_id"), {'user_id': req.manager_id}).fetchall()
+
 
     if not timsheet_data_user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     result_list = []
+    cnt=0
     for timesheet in timsheet_data_user:
         # result_list.append({
         #     "timesheet_id": timesheet.timesheet_id,
         #     "start_time": timesheet.start_time
         # })
         result_list.append({
+            "id":cnt,
+            "employee_id": timesheet.employee_id,
+            "name": timesheet.name,
             "ap_id": timesheet.ap_id,
             "created_at": timesheet.created_at.strftime("%Y-%m-%d %H:%M:%S"),  # Format datetime
             "employee_id": timesheet.employee_id,
@@ -249,6 +317,7 @@ def get_timesheet_data_by_manager(current_user: userBase, db: Session = Depends(
             # "modify_date": timesheet.modify_date.strftime("%Y-%m-%d %H:%M:%S"),  # Format datetime
             # "isactive": timesheet.isactive
         })
+        cnt+=1
     
     return result_list
 
@@ -261,7 +330,14 @@ async def post_approve_req(req:userBase,db: Session = Depends(get_db)):
 
     ticket_data_Refuser = db.query(TimesheetApproval).filter(TimesheetApproval.ap_id == ap_id).first()
 
-    print(ticket_data_Refuser.ap_id)
+    # print(ticket_data_Refuser.ap_id)
+    emp_id = ticket_data_Refuser.employee_id
+    print("EMployee Id", )
+
+    timesheet_data_user = db.query(Timesheet).filter(Timesheet.employee_id == emp_id).all()
+
+    for timesheet in timesheet_data_user:
+        timesheet.status=2
 
     if not ticket_data_Refuser:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
@@ -295,6 +371,9 @@ async def post_reject_req(req:userBase,db: Session = Depends(get_db)):
 
 @app.post("/postTimesheetDataByUser")
 def post_timesheet_data(newEntry: TimesheetBase, db: Session = Depends(get_db)):
+
+    log_it("Demo message")
+
     emp_id=newEntry.employee_id
     print(newEntry.dict())  # Debug print
     timesheet_Record = Timesheet(**newEntry.dict())
@@ -557,11 +636,11 @@ async def update_ticket_donee(req:addTicketBase, db: Session = Depends(get_db)):
 @app.post("/getLeaveDataByUser")
 def get_leaves(request: userBase, db: Session = Depends(get_db)):
     try:
-        leave_records = db.query(Leaves).all()
+        leave_records = db.query(Leaves).filter(Leaves.employee_id==request.emp_id).all()
         # ticket_data_Refuser = db.query(Ticket).filter(Ticket.ref_employee_id == emp_id)
 
-        if not leave_records:
-            raise HTTPException(status_code=401, detail="Incorrect username or password")
+        # if not leave_records:
+        #     raise HTTPException(status_code=401, detail="Incorrect username or password")
         
         result_list = []
         for leave in leave_records:
@@ -636,17 +715,17 @@ def get_leave(request: updateRemBase, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=404, detail="Leave record not found")
 
-    employee_id = leave_record.t_days
+    employee_id = leave_record.balance
 
-    hdf=leave_record.t_days
-    leave_record.t_days=hdf-request.days
+    hdf=leave_record.balance
+    leave_record.balance=hdf-request.days
     db.commit()
     return {"employee_id": employee_id, "leave_record": leave_record}
 
 class LeaveRequestBase(BaseModel):
     leave_id: Optional[int] = None
-    start_time: str
-    end_time: str
+    start_time: date
+    end_time: date
     reason: str
     t_id: int
     status: int
@@ -1011,6 +1090,8 @@ async def ret_one(req: userBase, current_user: Annotated[str, Depends(get_curren
     
 
 class projectAddBase(BaseModel):
+    project_id: int
+    name: str
     description: str
     start_date: date
     deadline: date
@@ -1040,12 +1121,13 @@ async def get_manager_project(req: userBase, db: Session = Depends(get_db)):
     project_list=db.query(Project).filter(Project.manager_id == id).all()
 
 
-    if not project_list:
-       raise HTTPException(status_code=401, detail="Incorrect username or password")
+    # if not project_list:
+    #    raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     result_list = []
     for project in project_list:
         result_list.append({
+            "name": project.name,
             "project_id":  project.project_id,
             "description": project.description,
             "startTime": project.start_date,
@@ -1119,6 +1201,7 @@ async def get_project_selected_employee(req: commonProjectBase, db: Session = De
 
 
     if not common_projects:
+        
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
     result_list = []
@@ -1202,30 +1285,9 @@ class EmployeeRef(BaseModel):
     role: str
     manager_id: int
     projects: List[int]
+    LoggedHrs: int = 0
+    LeaveDays: int = 0
 
-
-@app.post("/getEmployeeInfo")
-def get_employees_with_projects(req: userBase, db: Session = Depends(get_db)):
-    manager_id=req.manager_id
-    employees = db.query(Employee).filter(Employee.manager_id == manager_id).all()
-    employee_projects = []
-
-    for emp in employees:
-        projects = db.query(EmployeeProjects).filter(EmployeeProjects.employee_id == emp.empid).all()
-        project_ids = [proj.project_id for proj in projects]
-
-        # print(emp.employee_id)
-        employee_info = EmployeeRef(
-            employee_id=emp.empid,
-            name=emp.name,
-            role=emp.role,
-            manager_id=emp.manager_id,
-            projects=project_ids
-        )
-
-        employee_projects.append(employee_info)
-
-    return employee_projects
 
 
 # @app.post("/getEmployeeInfo")
@@ -1297,3 +1359,105 @@ async def timesheet_not_filled_alert(req: userBase, db: Session = Depends(get_db
     return {"rem_days":rem_days-cnt}
 
 
+@app.post("/getLatestApproveRequestForEmployee")
+async def get_latest_approve_request_for_employee(req: userBase, db: Session = Depends(get_db)):
+    latest_date = db.execute(text("select max(created_at) as mx_date from timesheetApproval where employee_id=:user_id and status=2"), {'user_id': req.emp_id}).first()
+
+    if not latest_date:
+        return {"latest_date":None}
+
+    return {"latest_date":latest_date.mx_date}
+
+@app.delete("/deleteSingleTimesheetEntry")
+async def delete_single_entry(req: userBase, db: Session = Depends(get_db)):
+    query = db.query(Timesheet).filter(
+        Timesheet.timesheet_id == req.timesheet_id,
+        Timesheet.employee_id == req.emp_id
+    )
+
+    items_to_delete = query.all()
+
+
+    
+    if items_to_delete:
+        for item in items_to_delete:
+            db.delete(item)
+        db.commit()
+        return {"message": "Items deleted successfully"}
+
+
+
+@app.post("/getEmployeeInfo")
+def get_employees_with_projects(req: userBase, db: Session = Depends(get_db)):
+    manager_id=req.manager_id
+    employees = db.query(Employee).filter(Employee.manager_id == manager_id).all()
+    employee_projects = []
+    timesheets = db.execute(text("SELECT * FROM timesheet WHERE timesheet.manager_id = :user_id and timesheet.start_time>= :time1 and timesheet.end_time<= :time2 and timesheet.status=2 ORDER BY timesheet.employee_id"), {'user_id': req.manager_id, "time1":req.start_time, "time2":req.end_time}).fetchall()
+    leaves = db.execute(text("SELECT * FROM leaves WHERE leaves.manager_id = :user_id and leaves.start_time>= :time1 and leaves.end_time<= :time2 ORDER BY leaves.employee_id"), {'user_id': req.manager_id, "time1":req.start_time, "time2":req.end_time}).fetchall()
+
+
+    for emp in employees:
+        projects = db.query(EmployeeProjects).filter(EmployeeProjects.employee_id == emp.empid).all()
+        project_ids = [proj.project_id for proj in projects]
+
+
+        total=0
+        for timesheet in timesheets:
+            if timesheet.employee_id==emp.empid:
+                hours_worked = (timesheet.end_time - timesheet.start_time).total_seconds()//(3600)
+                total += hours_worked
+
+        leave_total=0
+        for leave in leaves:
+            if leave.employee_id==emp.empid:
+                leave_total+=(leave.end_time - leave.start_time).total_seconds() / (3600*24)
+                # if(leave.employee_id==907270002):
+                #     print()
+
+
+        # print(emp.employee_id)
+        employee_info = EmployeeRef(
+            employee_id=emp.empid,
+            name=emp.name,
+            role=emp.role,
+            manager_id=emp.manager_id,
+            projects=project_ids,
+            LoggedHrs = total,
+            LeaveDays=leave_total
+        )
+
+        employee_projects.append(employee_info)
+    
+
+
+    return employee_projects
+
+
+@app.post("/getProjectByEmployee")
+async def get_employee_project(req: userBase, db: Session = Depends(get_db)):
+    projects = db.execute(text("select name, a.project_id, b.employee_id from project a join employeeprojects b on a.project_id=b.project_id where employee_id= :user_id"), {'user_id': req.emp_id}).fetchall()
+
+
+    result_list = []
+    for project in projects:
+        result_list.append({
+            "project_id": project.project_id,
+            "name": project.name,
+        })
+    
+    return result_list
+
+
+@app.post("/getEmployeeByProject")
+async def get_project_employee(req: userBase, db: Session = Depends(get_db)):
+    employees = db.execute(text("select name, b.employee_id, project_id from employee a join employeeprojects b on a.empid=b.employee_id where b.project_id= :project_id and b.employee_id!= :user_id"), {'project_id': req.project_id, 'user_id': req.emp_id}).fetchall()
+
+
+    result_list = []
+    for employee in employees:
+        result_list.append({
+            "employee_id": employee.employee_id,
+            "name": employee.name,
+        })
+    
+    return result_list

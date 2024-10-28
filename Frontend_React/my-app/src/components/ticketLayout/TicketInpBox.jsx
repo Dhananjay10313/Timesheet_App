@@ -2,7 +2,6 @@
 // import React, { useState, useEffect } from "react";
 // import BasicExample from "./creactedTable";
 
-
 // function MyForm() {
 //   const [inputValue1, setInputValue1] = useState("");
 //   const [inputValue2, setInputValue2] = useState("");
@@ -11,7 +10,6 @@
 //   const [commonEmployeeList, setCommonEmployeeList] = useState([])
 //   const [data, setData] = useState([]);
 //   const [projectData,setProjectData] = useState([])
-
 
 //   useEffect(()=>{
 //     axios.post(
@@ -54,7 +52,7 @@
 //      ,
 //       {
 //         emp_id:1, // change with currently logged in user
-//         co_emp_id: value 
+//         co_emp_id: value
 //       }
 //     ).then((response)=>{
 //       setProjectData(response.data)
@@ -74,7 +72,7 @@
 //     console.log("Input 1:", inputValue1);
 //     console.log("Input 2:", inputValue2);
 //     // setInputValue1(""), setInputValue2("");
-   
+
 //     const formData={
 //       "ticket_id":  Math.floor(Math.random() * (10000 - 1 + 1)) + 1,
 //       "create_at": "2024-10-08", // Replace with the desired date in YYYY-MM-DD format
@@ -102,8 +100,6 @@
 //      formData
 //     )
 
-    
-
 //   };
 
 //   return (
@@ -130,7 +126,7 @@
 //               {/* <option value="">Select...</option>
 //               <option value="1">Option 1</option>
 //               <option value="1">Option 2</option> */}
-              
+
 //             </select>
 //           </div>
 //           <div className="col-md-6">
@@ -181,12 +177,19 @@
 
 // export default MyForm;
 
-
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { TextField, FormControl, InputLabel, Select, MenuItem, Button, Grid } from "@mui/material";
+import {
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Grid,
+} from "@mui/material";
 import { ToastContainer } from "react-toastify";
 import BasicExample from "./creactedTable";
 
@@ -197,44 +200,81 @@ function MyForm() {
   const [commonEmployeeList, setCommonEmployeeList] = useState([]);
   const [data, setData] = useState([]);
   const [projectData, setProjectData] = useState([]);
+  const storedData = localStorage.getItem("userData");
+  const userState = storedData ? JSON.parse(storedData) : null;
+  const employee_id = userState["emp_id"];
+  const manager_id = userState["manager_id"];
 
   useEffect(() => {
-    axios.post("http://localhost:8000/getTicketDataByUser", { id: 1 }) // change with currently logged in user
+    axios
+      .post("http://localhost:8000/getTicketDataByUser", { id: employee_id })
       .then((response) => {
         setData(response.data);
       });
 
-    axios.post("http://localhost:8000/getCommonEmployee", { emp_id: 1 }) // change with currently logged in user
+    axios
+      .post("http://localhost:8000/getProjectByEmployee", {
+        emp_id: employee_id,
+      })
       .then((response) => {
-        setCommonEmployeeList(response.data);
+        setProjectData(response.data);
       });
   }, []);
 
+  // useEffect(() => {
+  //   // console.log("here: ", value)
+
+  // }, [selectedOption]);
+
   const emp = async (value) => {
-    console.log("here: ", value)
-    await axios.post("http://localhost:8000/getProjectBySelectedEmployee", {
-      emp_id: 1, // change with currently logged in user
-      co_emp_id: value
-    }).then((response) => {
-      setProjectData(response.data);
-    });
+    // console.log("here: ", value)
+    // await axios.post("http://localhost:8000/getProjectBySelectedEmployee", {
+    //   emp_id: 1,
+    //   co_emp_id: value
+    // }).then((response) => {
+    //   setProjectData(response.data);
+    // });
+    console.log("value", value);
+
+    await axios
+      .post("http://localhost:8000/getEmployeeByProject", {
+        project_id: value,
+        emp_id: employee_id
+      })
+      .then((response) => {
+        setCommonEmployeeList(response.data);
+      });
   };
 
-  const handleEmployeeSelect = (value) => {
-    setEmployeeSelectedOption(value);
+  useEffect(() => {
+    console.log("Employee List", commonEmployeeList);
+  }, [commonEmployeeList]);
+
+  const handleProjectSelect = async (value) => {
     emp(value);
+  };
+
+  const handleEmployeeSelect = async (value) => {
+    setEmployeeSelectedOption(value);
+    // emp(value);
+    // await axios.post("http://localhost:8000/getProjectBySelectedEmployee", {
+    //   emp_id: 1,
+    //   co_emp_id: employeeSelectedOption
+    // }).then((response) => {
+    //   setProjectData(response.data);
+    // });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = {
       ticket_id: Math.floor(Math.random() * (10000 - 1 + 1)) + 1,
-      create_at: "2024-10-08", // Replace with the desired date in YYYY-MM-DD format
+      create_at: "2024-10-08",
       description: inputValue2,
-      status: 0, // Replace with the desired status value
-      creator_id: 1, // Replace with the creator's ID
-      project_id: parseInt(selectedOption), // Replace with the project's ID
-      ref_employee_id: employeeSelectedOption
+      status: 0,
+      creator_id: employee_id,
+      project_id: parseInt(selectedOption),
+      ref_employee_id: employeeSelectedOption,
     };
 
     setData([...data, formData]);
@@ -253,16 +293,16 @@ function MyForm() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth margin="normal">
-              <InputLabel>Select Employee</InputLabel>
+              <InputLabel>Select Project</InputLabel>
               <Select
-                value={employeeSelectedOption}
-                onChange={(e) => {handleEmployeeSelect(e.target.value)
-                  emp(e.target.value)
-                } }
+                value={selectedOption}
+                onChange={(e) => {
+                  setSelectedOption(e.target.value),
+                    handleProjectSelect(e.target.value);
+                }}
               >
-                <MenuItem value={0}>Select...</MenuItem>
-                {commonEmployeeList.map((option) => (
-                  <MenuItem key={option.id} value={option.id}>{option.id}</MenuItem>
+                {projectData.map((option) => (
+                  <MenuItem value={option.project_id}>{option.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -271,7 +311,9 @@ function MyForm() {
             <TextField
               label="Description"
               value={inputValue2}
-              onChange={(e) => setInputValue2(e.target.value)}
+              onChange={(e) => {
+                setInputValue2(e.target.value);
+              }}
               fullWidth
               margin="normal"
             />
@@ -279,14 +321,18 @@ function MyForm() {
         </Grid>
 
         <FormControl fullWidth margin="normal">
-          <InputLabel>Select Project</InputLabel>
+          <InputLabel>Select Employee</InputLabel>
           <Select
-            value={selectedOption}
-            onChange={(e) => setSelectedOption(e.target.value)}
+            value={employeeSelectedOption}
+            onChange={(e) => {
+              handleEmployeeSelect(e.target.value);
+              // emp(e.target.value)
+            }}
           >
-            <MenuItem value="">Select...</MenuItem>
-            {projectData.map((option) => (
-              <MenuItem key={option.project_id} value={option.project_id}>{option.project_id}</MenuItem>
+            {commonEmployeeList.map((option) => (
+              <MenuItem key={option.id} value={option.employee_id}>
+                {option.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>

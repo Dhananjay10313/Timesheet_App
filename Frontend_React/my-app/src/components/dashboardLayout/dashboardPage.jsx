@@ -7,9 +7,9 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker"; // Updated import
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"; // Import localization provider
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"; // Adapter for Dayjs
+import { DatePicker } from "@mui/x-date-pickers/DatePicker"; 
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"; 
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"; 
 import axios from "axios";
 import DonutChartCard from "./timesheetAcceptedVsRejected";
 import DonutChartCar2 from "./companyHrsVSteamHrs";
@@ -20,7 +20,7 @@ import dayjs from "dayjs";
 import { useAuth } from "../provider/authProvider";
 
 const DashboardPage = () => {
-  // Default dates: First and last day of the current month
+  
   
   const currentMonthStart = dayjs().startOf("month");
   const currentMonthEnd = dayjs().endOf("month");
@@ -64,7 +64,12 @@ const DashboardPage = () => {
     },
   });
 
-  const { token, userState } = useAuth();
+  const storedData = localStorage.getItem("userData");
+  const userState = storedData ? JSON.parse(storedData) : null;
+  const employee_id = userState["emp_id"];
+  const manager_id = userState["manager_id"]
+
+  // const { token, userState } = useAuth();
   console.log("kdksksjd", userState)
 
   const fetchData = async (start, end) => {
@@ -72,7 +77,7 @@ const DashboardPage = () => {
       const response = await axios.post(
         "http://localhost:8000/getTotalCompanyHrsVsTeamsHrs",
         {
-          manager_id: 1, // change with currently logged manager
+          manager_id: 1, 
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -132,7 +137,7 @@ const DashboardPage = () => {
       const response = await axios.post(
         "http://localhost:8000/getApprovedVsRecieved",
         {
-          manager_id: 1, // change with currently logged manager
+          manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -186,10 +191,10 @@ const DashboardPage = () => {
   const Navbar = () => (
     <AppBar
       position="static"
-      sx={{ backgroundColor: "#008000", marginTop: "0px" }}
+      sx={{ backgroundColor: "#ffffff", marginTop: "0px" }}
     >
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1, color:"black" }}>
           Dashboard
         </Typography>
         <Box sx={{ display: "flex", gap: "20px", alignItems: "center" }}>
@@ -224,7 +229,6 @@ const DashboardPage = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Navbar />
-      {/* <h1>Donut Chart Example</h1> */}
       <div
         style={{
           display: "flex",

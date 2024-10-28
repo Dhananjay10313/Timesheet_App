@@ -86,64 +86,46 @@
 
 // export default LeaveEditableTable;
 
-
-
 import React from "react";
-import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-} from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { Container } from "react-bootstrap";
 
 function LeaveEditableTable({ data }) {
+  const columns = [
+    { field: "leave_id", headerName: "Leave ID", width: 230 },
+    { field: "start_date", headerName: "Start Date", width: 200 },
+    { field: "end_date", headerName: "End Date", width: 200 },
+    { field: "reason", headerName: "Reason", width: 250 },
+    {
+      field: "t_id",
+      headerName: "Type",
+      width: 200,
+      renderCell: (params) =>
+        params.row.t_id === 1
+          ? "Sick Leave"
+          : params.row.t_id === 2
+          ? "Casual Leave"
+          : "Paid Leave",
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 180,
+      renderCell: (params) =>
+        params.row.status === 1
+          ? "Pending"
+          : params.row.status === 2
+          ? "Approved"
+          : "Rejected",
+    },
+  ];
+
   return (
-    <div style={{ marginTop: "40px" }}>
+    <Container style={{ height: "auto", width: "auto", marginTop: "40px" }}>
       <h3>Your Leave Requests</h3>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Leave ID</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
-              <TableCell>Reason</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((row, index) => (
-              <TableRow key={index}>
-                <TableCell>{row.leave_id}</TableCell>
-                <TableCell>{row.start_date}</TableCell>
-                <TableCell>{row.end_date}</TableCell>
-                <TableCell>{row.reason}</TableCell>
-                <TableCell>
-                  {row.t_id === 1
-                    ? "Sick Leave"
-                    : row.t_id === 2
-                    ? "Casual Leave"
-                    : "Paid Leave"}
-                </TableCell>
-                <TableCell>
-                  {row.status == 1
-                    ? "Pending"
-                    : row.status == 2
-                    ? "Approved"
-                    : "Rejected"}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </div>
+      <DataGrid rows={data} columns={columns} getRowId={(row) => row.leave_id} />
+    </Container>
   );
 }
 
 export default LeaveEditableTable;
-

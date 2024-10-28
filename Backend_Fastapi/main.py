@@ -13,7 +13,7 @@ from datetime import date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from model import Employee
-from model import Department, EmployeeProjects, Leaves, typeOfLeave, Timesheet, Ticket, EmployeeProjects, TimesheetApproval, Alert
+from model import Department, EmployeeProjects, Leaves, typeOfLeave, Timesheet, Ticket, EmployeeProjects, TimesheetApproval, Alert, Project
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
@@ -110,6 +110,7 @@ class userBase(BaseModel):
     ap_id: Optional[int] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    password: Optional[str] = None
     
     
 
@@ -730,34 +731,19 @@ async def update_ticket_done(req:updateLeaveBase, db: Session = Depends(get_db))
 
 
 
-@app.post("/addAlerts")
-async def add_alerts(req:AlertBase, db: Session = Depends(get_db)):
-    add_item=Alert(**req.dict())
+# @app.post("/addAlerts")
+# async def add_alerts(req:AlertBase, db: Session = Depends(get_db)):
+#     add_item=Alert(**req.dict())
 
-    if not add_item:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+#     if not add_item:
+#         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
-    db.add(add_item)
-    db.commit()
-    db.refresh(add_item)
+#     db.add(add_item)
+#     db.commit()
+#     db.refresh(add_item)
     
-    return 1
+#     return 1
 
-
-@app.post("/updateAlerts")
-async def update_alerts(req:AlertBase, db: Session = Depends(get_db)):
-    alt_id=req.alt_id
-
-    change_alert=db.query(Alert).filter(Alert.alt_id == alt_id).first()
-
-    if not change_alert:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    change_alert.status=1
-    
-    db.commit()
-
-    return 1
 
 @app.post("/getProjectDataByuser")
 async def get_project_data(req:userBase, db: Session = Depends(get_db)):
@@ -937,5 +923,377 @@ def calculate_hours_projects(req: userBase, db: Session = Depends(get_db)):
             project_hours[entry.project_id] = hours_worked
 
     return project_hours
+
+
+
+from datetime import datetime, timedelta, timezone
+from typing import Annotated
+
+import jwt
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jwt.exceptions import InvalidTokenError
+# from passlib.context import CryptContext
+from pydantic import BaseModel
+
+# to get a string like this run:
+# openssl rand -hex 32
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+@app.post("/token")
+async def login_for_access_token(
+    request: passReq,
+    db: Session = Depends(get_db)
+) -> Token:
+    
+    id=request.id
+    password=request.key
+    # print(data)
+    
+    user= db.query(Employee).filter(Employee.empid == id, Employee.password == password).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.empid}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+    return "ok"
+
+@app.post("/getUserInfo")
+async def ret_one(req: userBase, current_user: Annotated[str, Depends(get_current_user)], db: Session = Depends(get_db)):
+    authenticated_user= db.query(Employee).filter(Employee.empid == req.emp_id, Employee.password == req.password).first()
+
+    return {
+        "emp_id":authenticated_user.empid,
+        "manager_id":authenticated_user.manager_id,
+        "is_manager":authenticated_user.ismanager
+    }
+    
+
+class projectAddBase(BaseModel):
+    description: str
+    start_date: date
+    deadline: date
+    employee_count: int
+    manager_id: int
+
+
+@app.post("/addProjectData")
+def add_project_data(req: projectAddBase, db: Session = Depends(get_db)):
+    add_item=Project(**req.dict())
+    print(req)
+
+    if not add_item:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    db.add(add_item)
+    db.commit()
+    db.refresh(add_item)
+    
+    return 1
+
+
+@app.post("/getProjectDataByManagerId")
+async def get_manager_project(req: userBase, db: Session = Depends(get_db)):
+    id=req.manager_id
+
+    project_list=db.query(Project).filter(Project.manager_id == id).all()
+
+
+    if not project_list:
+       raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    result_list = []
+    for project in project_list:
+        result_list.append({
+            "project_id":  project.project_id,
+            "description": project.description,
+            "startTime": project.start_date,
+            "deadline": project.deadline,
+            "employeeCount" : project.employee_count
+        })
+    
+    return result_list
+
+
+@app.post("/getEmployeeInfoByManger")
+async def get_employee_by_manager(req: userBase, db: Session = Depends(get_db)):
+    id=req.manager_id
+
+    employee_list=db.query(Employee).filter(Employee.manager_id == id).all()
+
+    if not employee_list:
+       raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    result_list = []
+    for employee in employee_list:
+        result_list.append({
+            "id":  employee.empid,
+            "name": employee.name,
+            "role": employee.role,
+        })
+    
+    return result_list 
+
+class addProjectBase(BaseModel):
+    employee_id: int
+    project_id: int
+
+@app.post("/addEmployeeProjects")
+async def add_employee_projects(req: addProjectBase, db: Session = Depends(get_db)):
+    add_item = EmployeeProjects(**req.dict())
+
+    if not add_item:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    db.add(add_item)
+    db.commit()
+    db.refresh(add_item)
+    
+    return 1
+
+
+@app.post("/getCommonEmployee")
+async def get_common_employee(req: userBase, db: Session = Depends(get_db)):
+    common_employees = db.execute(text("select distinct employee_id from employeeProjects where project_id in (select project_id from employeeProjects where employee_id= :user1) and employee_id!= :user2"), {'user1': req.emp_id, "user2": req.emp_id}).fetchall()
+
+    if not common_employees:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+    result_list = []
+    for employee in common_employees:
+        result_list.append({
+            "id":  employee.employee_id
+        })
+    
+    return result_list
+
+
+class commonProjectBase(BaseModel):
+    emp_id: int
+    co_emp_id: int
+
+@app.post("/getProjectBySelectedEmployee")
+async def get_project_selected_employee(req: commonProjectBase, db: Session = Depends(get_db)):
+    common_projects = db.execute(text("select distinct project_id from employeeProjects where project_id in (select project_id from employeeProjects where employee_id= :user1) and employee_id= :user2"), {'user1': req.emp_id, "user2": req.co_emp_id}).fetchall()
+
+
+    if not common_projects:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+    result_list = []
+    for employee in common_projects:
+        result_list.append({
+            "project_id":  employee.project_id
+        })
+    
+    return result_list
+
+
+class addAlertBase(BaseModel):
+    alt_id: Optional[int] = None
+    employee_id: Optional[int] = None
+    alt_type: Optional[int] = None
+    alt_description: Optional[str] = None
+    status: Optional[int] = None
+
+
+# 1 timesheet alert
+# 2 leave alert
+# 3 ticket alert
+
+
+@app.post("/addAlert")
+async def add_alert(req: addAlertBase, db: Session = Depends(get_db)):
+    add_item=Alert(**req.dict())
+
+    if not add_item:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    db.add(add_item)
+    db.commit()
+    db.refresh(add_item)
+    
+    return 1
+
+
+@app.post("/updateAlerts")
+async def update_alerts(req: addAlertBase, db: Session = Depends(get_db)):
+    alt_id=req.alt_id
+
+    change_alert=db.query(Alert).filter(Alert.alt_id == alt_id).first()
+
+    if not change_alert:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    change_alert.status=1
+    
+    db.commit()
+
+    return 1
+
+
+@app.post("/getAlertByEmployee")
+async def get_alert_by_employee(req: userBase, db: Session = Depends(get_db)):
+    
+    alert_list = db.query(Alert).filter(Alert.employee_id == req.emp_id, Alert.status==0).all()
+
+    if not alert_list:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    result_list = []
+    for alert in alert_list:
+        result_list.append({
+            "alt_id": alert.alt_id,
+            "description": alert.alt_description,
+            "employee_id": alert.employee_id,
+            "status": alert.status,
+            "type": alert.alt_type
+        })
+    
+    return result_list
+
+
+from typing import List, Dict
+
+class EmployeeRef(BaseModel):
+    employee_id: int
+    name: str
+    role: str
+    manager_id: int
+    projects: List[int]
+
+
+@app.post("/getEmployeeInfo")
+def get_employees_with_projects(req: userBase, db: Session = Depends(get_db)):
+    manager_id=req.manager_id
+    employees = db.query(Employee).filter(Employee.manager_id == manager_id).all()
+    employee_projects = []
+
+    for emp in employees:
+        projects = db.query(EmployeeProjects).filter(EmployeeProjects.employee_id == emp.empid).all()
+        project_ids = [proj.project_id for proj in projects]
+
+        # print(emp.employee_id)
+        employee_info = EmployeeRef(
+            employee_id=emp.empid,
+            name=emp.name,
+            role=emp.role,
+            manager_id=emp.manager_id,
+            projects=project_ids
+        )
+
+        employee_projects.append(employee_info)
+
+    return employee_projects
+
+
+# @app.post("/getEmployeeInfo")
+# async def get_employee_info(req: userBase, db: Session = Depends(get_db)):
+#     employee_list=db.query(Employee).filter(Employee.manager_id == req.manager_id).all()
+
+#     if not employee_list:
+#         raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+#     result_list = []
+#     for employee in employee_list:
+        
+    
+#     return result_list
+
+
+
+# class EmployeeWithProjects(BaseModel):
+#     employee: Employee
+    
+
+# @app.get("/employees/manager/{manager_id}", response_model=List[EmployeeWithProjects])
+# def get_employees_with_projects(manager_id: int, db: Session = Depends(get_db)):
+    
+#     # Query to get employees with the specified manager_id
+#     db.execute("SELECT * FROM employee WHERE manager_id = ?", (manager_id,))
+#     employees = cursor.fetchall()
+
+#     employee_projects = []
+
+#     for emp in employees:
+#         employee_id = emp['employee_id']
+        
+#         # Query to get projects for each employee
+#         cursor.execute("SELECT project_id FROM employeeProject WHERE employee_id = ?", (employee_id,))
+#         projects = cursor.fetchall()
+#         project_ids = [proj['project_id'] for proj in projects]
+
+#         employee_info = Employee(
+#             employee_id=emp['employee_id'],
+#             name=emp['name'],
+#             email=emp['email'],
+#             manager_id=emp['manager_id']
+#         )
+
+#         employee_projects.append(EmployeeWithProjects(employee=employee_info, projects=project_ids))
+
+#     conn.close()
+#     return employee_projects
+
+
+
+
+
+@app.post("/pushTimesheetNotFilledAlert")
+async def timesheet_not_filled_alert(req: userBase, db: Session = Depends(get_db)):
+
+    timesheet_dates = db.execute(text("SELECT DISTINCT CONVERT(DATE, start_time)  FROM timesheet WHERE timesheet.employee_id = :user_id and CONVERT(DATE,timesheet.start_time) < CONVERT(DATE, GETDATE())"), {'user_id': req.emp_id}).fetchall()
+
+    cnt=0
+    current_date = date.today() 
+    print(current_date)
+
+    for i in timesheet_dates:
+        cnt+=1
+
+    rem_days=current_date.day
+
+    return {"rem_days":rem_days-cnt}
 
 

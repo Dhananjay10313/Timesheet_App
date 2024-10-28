@@ -6,7 +6,6 @@ function TicketPage() {
   return (
     <div className="container ticket-container">
       <MyForm />
-      {/* <BasicExample /> */}
       <EditableTable />
     </div>
   );

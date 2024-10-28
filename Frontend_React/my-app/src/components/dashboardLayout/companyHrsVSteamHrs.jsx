@@ -1,31 +1,30 @@
-// DonutChartCard.js
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Card, CardContent, Typography } from '@mui/material';
 
-// Register Chart.js components
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DonutChartCard2 = ({ accepted, rejected }) => {
   const total = accepted + rejected;
 
-  // Define the chart data
+  
   const data = {
     labels: ['Company Total Hrs', 'Team Total Hrs'],
     datasets: [
       {
         data: [accepted, rejected],
-        backgroundColor: ['#4caf50', '#f44336'], // Colors for accepted and rejected sections
+        backgroundColor: ['#4caf50', '#f44336'], 
         hoverBackgroundColor: ['#66bb6a', '#e57373'],
         borderWidth: 2,
       },
     ],
   };
 
-  // Define options for the donut chart
+  
   const options = {
-    cutout: '70%', // Creates the donut hole effect
+    cutout: '70%', 
     plugins: {
       tooltip: {
         callbacks: {
@@ -37,11 +36,11 @@ const DonutChartCard2 = ({ accepted, rejected }) => {
         },
       },
       legend: {
-        display: true, // Show legend for better readability
+        display: true, 
         position: 'top',
       },
     },
-    maintainAspectRatio: false, // Ensures the chart scales properly
+    maintainAspectRatio: false, 
   };
 
   return (

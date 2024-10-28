@@ -76,6 +76,7 @@ class Project(Base):
     __tablename__ = "project"
 
     project_id = Column(Integer, primary_key=True)
+    name=Column(String)
     description = Column(String)
     start_date = Column(Date)
     deadline = Column(Date)
@@ -142,8 +143,8 @@ class Leaves(Base):
     __tablename__ = "leaves"
 
     leave_id = Column(Integer, primary_key=True)
-    start_time = Column(String)
-    end_time = Column(String)
+    start_time = Column(Date)
+    end_time = Column(Date)
     t_id = Column(Integer) #ForeignKey("typeOfLeave.t_id")
     status = Column(Integer)
     reason = Column(String)

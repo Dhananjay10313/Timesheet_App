@@ -265,7 +265,7 @@
 //       ];
 //       return {
 //         id: id,
-//         name: "Project" + String.fromCharCode(64+id), 
+//         name: "Project" + String.fromCharCode(64+id),
 //         color: "#38761d",
 //       };
 //     };
@@ -424,9 +424,6 @@
 
 // export default TimesheetTablePage;
 
-
-
-
 import React, { useState, useEffect } from "react";
 import { Container } from "react-bootstrap"; // Remove Table import from here
 import axios from "axios";
@@ -475,8 +472,10 @@ function TimesheetTablePage() {
       text: "string",
     },
   ]);
-  const [data, setData] = useState([{ id: "numa", name: "jdsh", status: "io" }]);
-  const [refEmp, setRefEmp] = useState(1);
+  const [data, setData] = useState([
+    { id: "numa", name: "jdsh", status: "io" },
+  ]);
+
   const [formattedData, setFormattedData] = useState([]);
 
   const [isButtonClicked, setIsButtonClicked] = useState(false);
@@ -486,6 +485,13 @@ function TimesheetTablePage() {
   const [ind, setInd] = useState(0);
   const [projects, setProjects] = useState([]);
   const [modProjects, setModProjects] = useState([]);
+  const storedData = localStorage.getItem("userData");
+  const userState = storedData ? JSON.parse(storedData) : null;
+  const employee_id = userState["emp_id"];
+  const manager_id = userState["manager_id"]
+  const [latestDate, setLatestDate] = useState(null);
+
+  const [refEmp, setRefEmp] = useState(employee_id);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -505,7 +511,7 @@ function TimesheetTablePage() {
         const approvalResponse = await axios.post(
           "http://localhost:8000/getTimesheetApprovalRequestByManager",
           {
-            manager_id: 1,
+            manager_id: manager_id,
           }
         );
         setData(approvalResponse.data);
@@ -517,13 +523,19 @@ function TimesheetTablePage() {
         const projectResponse = await axios.post(
           "http://localhost:8000/getProjectDataByuser",
           {
-            emp_id: 1,
+            emp_id: employee_id,
           }
         );
         setProjects(projectResponse.data);
       } catch (error) {
         console.error("Error fetching project data:", error);
       }
+
+      const response = await axios.post(
+        "http://localhost:8000/getLatestApproveRequestForEmployee",
+        {emp_id : 1}
+      );
+      setLatestDate(response.data["latest_date"]);
     };
 
     fetchData();
@@ -569,15 +581,15 @@ function TimesheetTablePage() {
       employee_id: refEmp,
       alt_type: 1,
       alt_description: "Timesheet Rejected",
-      status: 0
+      status: 0,
     });
   };
 
   const handleSend = async () => {
     setIsDisabledB(true);
     await axios.post("http://localhost:8000/addTimesheetForApproval", {
-      employee_id: 1,
-      manager_id: 1,
+      employee_id: employee_id,
+      manager_id: manager_id,
     });
   };
 
@@ -585,7 +597,7 @@ function TimesheetTablePage() {
     setIsDisabledB(true);
     setTimesheetData([]);
     await axios.delete("http://localhost:8000/deleteTimesheetData", {
-      data: { emp_id: 1 },
+      data: { emp_id: employee_id },
     });
   };
 
@@ -612,13 +624,16 @@ function TimesheetTablePage() {
   return (
     <Container>
       {/* Navbar */}
-      <AppBar position="static" sx={{ backgroundColor: "#e6e6e6" , marginBottom: "10px"}}>
+      <AppBar
+        position="static"
+        sx={{ backgroundColor: "#e6e6e6", marginBottom: "50px" }}
+      >
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1, color: "black" }}>
             Timesheet Management {": Employee id " + refEmp}
           </Typography>
 
-          {refEmp !== 1 ? ( // For Manager View
+          {false ? ( // For Manager View
             <>
               <Button
                 variant="contained"
@@ -671,13 +686,13 @@ function TimesheetTablePage() {
       />
 
       {/* Space between Timesheet and Table */}
-      <Box mb={3} /> {/* Add margin bottom to create space */}
-
+      {/* <Box mb={3} /> Add margin bottom to create space */}
+      {/* 
       <Typography variant="h4" style={{ marginTop: "60px", marginBottom: "10px" }}>
         Timesheets for Approval
-      </Typography>
+      </Typography> */}
 
-      {/* Approval Request Table */}
+      {/* Approval Request Table
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -705,7 +720,7 @@ function TimesheetTablePage() {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </TableContainer> */}
     </Container>
   );
 }

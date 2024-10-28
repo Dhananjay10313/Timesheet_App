@@ -13,7 +13,7 @@ const AlertList = ({ onClose }) => {
   useEffect(()=>{
     const fetchData = async () =>{
         const response = await axios.post("http://localhost:8000/getAlertByEmployee", {
-            emp_id: 1, //change with current user
+            emp_id: 1, 
         });
         setAlerts(response.data);
     }
@@ -47,7 +47,7 @@ const AlertList = ({ onClose }) => {
   const handleAlertClose = async (index) => {
     console.log("alerts[index].alt_id", alerts[index].alt_id)
     axios.post("http://localhost:8000/updateAlerts", {
-        alt_id: alerts[index].alt_id, //change with current user
+        alt_id: alerts[index].alt_id, 
     });
     const updatedAlerts = [...alerts];
     updatedAlerts.splice(index, 1);

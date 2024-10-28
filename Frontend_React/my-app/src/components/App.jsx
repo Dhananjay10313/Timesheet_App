@@ -10,7 +10,8 @@ import LoginForm from "./loginLayout/LoginPage";
 import DateInput from "./leaveLayout/leaveInput";
 import LeaveEditableTable from "./leaveLayout/LeaveApply";
 import LeavePage from "./leaveLayout/leavePage";
-import TimesheetTablePage from "./timesheetLayout/timesheetPage";
+import ApprovalTimesheetTablePage from "./timesheetApprovalLayout/timesheetPage";
+import TimesheetTablePage from './timesheetLayout/timesheetPage'
 import DashboardPage from "./dashboardLayout/dashboardPage"
 import AuthProvider from "./provider/authProvider";
 import ProjectForm from './projectLayout/projectPage'
@@ -48,8 +49,8 @@ import React from "react";
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-import Navbar from "./navbar";
-
+import Navbar from "./Navbar";
+import ApprovalLeavePage from "./leaveApprovalLayout/leaveApproval"
 import Sidebar from "./Sidebar";
 import ProjectPage from "./projectLayout/projectPage"
 import axios from "axios";
@@ -58,6 +59,12 @@ import axios from "axios";
 const App = () => {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
 
   useEffect(() => {
     const token=localStorage.getItem("token")
@@ -101,11 +108,11 @@ const App = () => {
 
     const fetchData = async () => {
       try {
-        console.log("Fetching data..."); // Debugging line
+        console.log("Fetching data..."); 
         const response = await axios.post("http://localhost:8000/pushTimesheetNotFilledAlert", { emp_id: 1 });
-        console.log("Response received:", response); // Debugging line
+        console.log("Response received:", response); 
         const rem_days = await response.data.rem_days;
-        console.log("rem_days", rem_days); // This should now execute
+        console.log("rem_days", rem_days);
     
         if (rem_days > 15) {
           await axios.post("http://localhost:8000/addAlert", {
@@ -159,9 +166,9 @@ const App = () => {
     <AuthProvider>
     <Router>
       <div className="app-layout">
-        {isAuthenticated && <Navbar Authenticate={() => setIsAuthenticated(false)}/>}
+        {isAuthenticated && <Navbar toggleSidebar={toggleSidebar} Authenticate={() => setIsAuthenticated(false)}/>}
 
-        {isAuthenticated && <Sidebar />}
+        {isAuthenticated && <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />}
 
         <div className="content-area">
           <Routes>
@@ -172,7 +179,11 @@ const App = () => {
 
             < Route path="/timesheet" element={!isAuthenticated?<Navigate to="/login" />:<TimesheetTablePage/>}  />
 
+            < Route path="/approvetimesheet" element={!isAuthenticated?<Navigate to="/login" />:<ApprovalTimesheetTablePage/>}  />
+
             <Route path="/leave" element={!isAuthenticated?<Navigate to="/login" />:<LeavePage/>}  />
+
+            <Route path="/leave-approval" element={!isAuthenticated?<Navigate to="/login" />:<ApprovalLeavePage/>}  />
 
             <Route path="/ticket" element={!isAuthenticated?<Navigate to="/login" />:<TicketPage/>}  />
 
