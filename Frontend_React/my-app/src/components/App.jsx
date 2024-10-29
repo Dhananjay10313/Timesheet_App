@@ -2,7 +2,7 @@
 // import SideBar from "./Sidebar";
 // import Button from "react-bootstrap/Button";
 // import MyNavbar from "./Navbar";
-import EditableTable from "./ticketLayout/RefTable";
+// import EditableTable from "./ticketLayout/RefTable";
 import MyForm from "./ticketLayout/TicketInpBox";
 import TicketPage from "./ticketLayout/TicketPage";
 import { useState, useEffect } from "react";
@@ -51,9 +51,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 import Navbar from "./Navbar";
 import ApprovalLeavePage from "./leaveApprovalLayout/leaveApproval"
-import Sidebar from "./Sidebar";
+import SidebarManager from "./SidebarManager";
 import ProjectPage from "./projectLayout/projectPage"
 import axios from "axios";
+import EditableTable from "./ticketLayout/RefTable"
+import SidebarEmployee from "./SidebarEmployee"
 // import AlertComponent from "./AlertComponent";
 
 const App = () => {
@@ -168,7 +170,7 @@ const App = () => {
       <div className="app-layout">
         {isAuthenticated && <Navbar toggleSidebar={toggleSidebar} Authenticate={() => setIsAuthenticated(false)}/>}
 
-        {isAuthenticated && <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />}
+        {isAuthenticated && <SidebarManager isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />}
 
         <div className="content-area">
           <Routes>
@@ -186,6 +188,8 @@ const App = () => {
             <Route path="/leave-approval" element={!isAuthenticated?<Navigate to="/login" />:<ApprovalLeavePage/>}  />
 
             <Route path="/ticket" element={!isAuthenticated?<Navigate to="/login" />:<TicketPage/>}  />
+
+            <Route path="/ticket-approval" element={!isAuthenticated?<Navigate to="/login" />:<EditableTable/>}  />
 
             <Route path="/project" element={!isAuthenticated?<Navigate to="/login" />:<ProjectForm/>}  />
 

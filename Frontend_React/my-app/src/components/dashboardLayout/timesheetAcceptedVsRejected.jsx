@@ -9,7 +9,7 @@ const DonutChartCard = ({ accepted, rejected, received }) => {
   const total = received;
 
   const data = {
-    labels: ['Accepted Quantity', 'Rejected Quantity', 'Pending Quantity'],
+    labels: ['Accepted', 'Rejected', 'Pending'],
     datasets: [
       {
         data: [accepted, rejected, received-accepted-rejected],

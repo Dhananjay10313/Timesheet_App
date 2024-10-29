@@ -404,27 +404,27 @@ def timesheet_approval(newEntry: approvalBase, db: Session = Depends(get_db)):
     return timesheet_Record
 
 
-@app.get("/getTicketDataByUser")
-def get_ticket_data(current_user: EmployeeBase = Depends(verify_token), db: Session = Depends(get_db)):
-    emp_id=current_user.empid
+# @app.get("/getTicketDataByUser")
+# def get_ticket_data(current_user: EmployeeBase = Depends(verify_token), db: Session = Depends(get_db)):
+#     emp_id=current_user.empid
 
-    ticket_data_Creatoruser = db.query(Ticket).filter(Ticket.creator_id == emp_id)
-    # ticket_data_Refuser = db.query(Ticket).filter(Ticket.ref_employee_id == emp_id)
+#     ticket_data_Creatoruser = db.query(Ticket).filter(Ticket.creator_id == emp_id)
+#     # ticket_data_Refuser = db.query(Ticket).filter(Ticket.ref_employee_id == emp_id)
 
-    if not ticket_data_Creatoruser:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+#     if not ticket_data_Creatoruser:
+#         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
-    result_list = []
-    for ticket in ticket_data_Creatoruser:
-        result_list.append({
-            "ticket_id": ticket.ticket_id,
-            "create_at": ticket.create_at,
-            "description": ticket.description,
-            "status": ticket.status,
-            "ref_employee_id": ticket.ref_employee_id
-        })
+#     result_list = []
+#     for ticket in ticket_data_Creatoruser:
+#         result_list.append({
+#             "ticket_id": ticket.ticket_id,
+#             "create_at": ticket.create_at,
+#             "description": ticket.description,
+#             "status": ticket.status,
+#             "ref_employee_id": ticket.ref_employee_id
+#         })
     
-    return result_list
+#     return result_list
 
 
 
@@ -1461,3 +1461,62 @@ async def get_project_employee(req: userBase, db: Session = Depends(get_db)):
         })
     
     return result_list
+
+
+class reqBase(BaseModel):
+    emp_id: Optional[int] = None
+    manager_id: Optional[int] = None
+    ap_id: Optional[int] = None
+    project_id: Optional[int] = None
+    start_time: Optional[date] = None
+    end_time: Optional[date] = None
+    password: Optional[str] = None
+    timesheet_id: Optional[int] = None
+
+
+@app.post("/getLeaveData")
+async def get_leave_data(req: reqBase, db: Session = Depends(get_db)):
+    leave_records = db.execute(text("SELECT start_time, end_time FROM leaves WHERE manager_id = :user_id and start_time>= :time1 and end_time<= :time2 and status=2"), {'user_id': req.manager_id, "time1":req.start_time, "time2":req.end_time}).fetchall()
+
+    try:
+        leave_data = 0
+        for record in leave_records:
+            leave_days = (record.end_time - record.start_time).days
+            leave_data+=leave_days
+        
+        return {"leave_records": leave_data}
+    except:
+        return 2
+
+@app.post("/getTopPerformers")
+async def get_top_performers(req: userBase, db: Session = Depends(get_db)):
+    timesheet_entries = db.execute(text("SELECT start_time, end_time, b.name FROM timesheet a join employee b on a.employee_id=b.empid WHERE b.manager_id = :user_id and start_time>= :time1 and end_time<= :time2 and status=2"), {'user_id': req.manager_id, "time1":req.start_time, "time2":req.end_time}).fetchall()
+
+    try:
+
+        # Aggregate total time worked for each employee
+        
+        employee_times = {}
+        for entry in timesheet_entries:
+            print("result")
+            time_diff = (entry.end_time - entry.start_time).total_seconds() / 3600  # Convert to minutes
+            if entry.name in employee_times:
+                employee_times[entry.name] += time_diff
+            else:
+                employee_times[entry.name] = time_diff
+
+        # Sort employees by total time worked in descending order and get the top three
+        sorted_employees = sorted(employee_times.items(), key=lambda x: x[1], reverse=True)[:3]
+
+        # Format the results
+        
+        result = [
+            {"employee_name": employee[0], "total_hours": employee[1]}
+            for employee in sorted_employees
+        ]
+
+        return result
+    except:
+        
+        return []
+

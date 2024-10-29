@@ -191,7 +191,7 @@ import {
   Grid,
 } from "@mui/material";
 import { ToastContainer } from "react-toastify";
-import BasicExample from "./creactedTable";
+import UpperEditableTable from "./creactedTable";
 
 function MyForm() {
   const [inputValue2, setInputValue2] = useState("");
@@ -342,7 +342,7 @@ function MyForm() {
         </Button>
       </div>
 
-      <BasicExample data={data} />
+      <UpperEditableTable data={data} />
     </LocalizationProvider>
   );
 }

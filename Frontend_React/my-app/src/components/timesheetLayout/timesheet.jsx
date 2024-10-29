@@ -85,7 +85,7 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
     cellWidthMin: 25,
     timeHeaders: [{ groupBy: "Hour" }, { groupBy: "Cell", format: "mm" }],
     scale: "CellDuration",
-    cellDuration: 60,
+    cellDuration: 30,
     eventHeight: 40,
     heightSpec: "Max",
     height: 450,

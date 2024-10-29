@@ -59,7 +59,7 @@ const Navbar = ({ Authenticate, toggleSidebar }) => {
           component="div"
           sx={{ flexGrow: 1, color: "#f5f5f5" }}
         >
-          My Dashboard
+          Rockwell Automation
         </Typography>
         <Box sx={{ display: "flex" }}>
           <IconButton

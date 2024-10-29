@@ -60,7 +60,7 @@ const BarChartByRole = ({ data }) => {
   };
 
   return (
-    <Card sx={{ width: '600px', height: '400px', margin: '0 auto', boxShadow: 3, borderRadius: 0 }}>
+    <Card sx={{ width: '550px', height: '400px', margin: '0 auto', boxShadow: 3, borderRadius: 8 }}>
       <CardContent>
         <Typography variant="h6" component="div" align="center" sx={{ marginBottom: 2 }}>
           Hours Worked by Role Type

@@ -6,7 +6,7 @@ import axios from "axios";
 
 function EditableTable() {
   const [data, setData] = useState([
-    { id: "numa", name: "jdsh", status: "io" },
+    { ticket_id:0, id: "numa", name: "jdsh", status: "io" },
   ]);
 
   const storedData = localStorage.getItem("userData");
@@ -15,15 +15,30 @@ function EditableTable() {
   const manager_id = userState["manager_id"];
 
   useEffect(() => {
-    axios
-      .post("http://localhost:8000/getTicketDataByRefUser", {
-        id: employee_id,
-      })
-      .then((response) => {
-        console.log(response.data);
-        setData(response.data);
-      });
-  }, [employee_id]);
+    const fecthData = async () => {
+      axios
+        .post("http://localhost:8000/getTicketDataByRefUser", {
+          id: employee_id,
+        })
+        .then((response) => {
+          console.log("Tickets ref user: ", response.data);
+          const responseData = response.data;
+
+          // Filter unique data
+          const uniqueData = [];
+          const ids = new Set();
+          responseData.forEach((item) => {
+            if (!ids.has(item.id)) {
+              ids.add(item.id);
+              uniqueData.push(item);
+            }
+          });
+
+          setData(uniqueData);
+        });
+    };
+    fecthData();
+  }, []);
 
   const handleCheckboxChange = async (index, status) => {
     const updatedData = [...data];
@@ -31,19 +46,16 @@ function EditableTable() {
     if (!data[index].status && status && data[index].status !== null) {
       updatedData[index].status = status;
       setData(updatedData);
-      axios.post(
-        "http://localhost:8000/updateTicketDataToDone",
-        {
-          id: data[index].ticket_id,
-        }
-      );
+      axios.post("http://localhost:8000/updateTicketDataToDone", {
+        id: data[index].ticket_id,
+      });
     }
 
     await axios.post("http://localhost:8000/addAlert", {
       employee_id: updatedData[index].employee_id,
       alt_type: 3,
       alt_description: `Ticket ID ${updatedData[index].ticket_id} Closed.`,
-      status: 0
+      status: 0,
     });
 
     console.log(
@@ -57,7 +69,11 @@ function EditableTable() {
     { field: "description", headerName: "Description", width: 300 },
     { field: "project_id", headerName: "Project", width: 150 },
     { field: "create_at", headerName: "Created At", width: 200 },
-    { field: "status", headerName: "Status", width: 150, renderCell: (params) => (
+    {
+      field: "status",
+      headerName: "Status",
+      width: 150,
+      renderCell: (params) => (
         <input
           type="checkbox"
           checked={params.value}
@@ -65,7 +81,7 @@ function EditableTable() {
             handleCheckboxChange(params.row.id, e.target.checked)
           }
         />
-      )
+      ),
     },
   ];
 

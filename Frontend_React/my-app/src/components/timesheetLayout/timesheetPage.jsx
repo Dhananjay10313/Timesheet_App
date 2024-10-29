@@ -622,9 +622,10 @@ function TimesheetTablePage() {
   };
 
   return (
-    <Container>
-      {/* Navbar */}
-      <AppBar
+
+    <>
+          {/* Navbar */}
+          <AppBar
         position="static"
         sx={{ backgroundColor: "#e6e6e6", marginBottom: "50px" }}
       >
@@ -677,6 +678,8 @@ function TimesheetTablePage() {
           )}
         </Toolbar>
       </AppBar>
+    <Container>
+
 
       {/* Timesheet Component */}
       <Timesheet
@@ -722,6 +725,7 @@ function TimesheetTablePage() {
         </Table>
       </TableContainer> */}
     </Container>
+    </>
   );
 }
 

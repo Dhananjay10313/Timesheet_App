@@ -6,10 +6,20 @@ import {
   Box,
   TextField,
   Button,
+  Container,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Card,
+  CardContent,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker"; 
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"; 
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"; 
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import axios from "axios";
 import DonutChartCard from "./timesheetAcceptedVsRejected";
 import DonutChartCar2 from "./companyHrsVSteamHrs";
@@ -20,8 +30,6 @@ import dayjs from "dayjs";
 import { useAuth } from "../provider/authProvider";
 
 const DashboardPage = () => {
-  
-  
   const currentMonthStart = dayjs().startOf("month");
   const currentMonthEnd = dayjs().endOf("month");
 
@@ -31,9 +39,11 @@ const DashboardPage = () => {
   const [acceptedQuantity, setAcceptedQuantity] = useState(80);
   const [rejectedQuantity, setRejectedQuantity] = useState(10);
   const [receivedQuantity, setReceivedQuantity] = useState(80);
+  const [totalLeaves, setTotalLeaves] = useState(0);
+  const [topPerformers, setTopPerformers] = useState([]);
 
-  const [companyHrs,setCompanyHrs] = useState(80)
-  const [teamHrs,setTeamHrs] = useState(20)
+  const [companyHrs, setCompanyHrs] = useState(80);
+  const [teamHrs, setTeamHrs] = useState(20);
   const [workData, setWorkData] = useState({
     "2024-10-01": 6,
     "2024-10-02": 8,
@@ -67,17 +77,17 @@ const DashboardPage = () => {
   const storedData = localStorage.getItem("userData");
   const userState = storedData ? JSON.parse(storedData) : null;
   const employee_id = userState["emp_id"];
-  const manager_id = userState["manager_id"]
+  const manager_id = userState["manager_id"];
 
   // const { token, userState } = useAuth();
-  console.log("kdksksjd", userState)
+  console.log("kdksksjd", userState);
 
   const fetchData = async (start, end) => {
     try {
       const response = await axios.post(
         "http://localhost:8000/getTotalCompanyHrsVsTeamsHrs",
         {
-          manager_id: 1, 
+          manager_id: employee_id,
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -97,7 +107,7 @@ const DashboardPage = () => {
       const response = await axios.post(
         "http://localhost:8000/calculateHoursProject",
         {
-          manager_id: 1, // change with currently logged manager
+          manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -117,7 +127,7 @@ const DashboardPage = () => {
       const response = await axios.post(
         "http://localhost:8000/getHrsWorkedPerDay",
         {
-          manager_id: 1, // change with currently logged manager
+          manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -143,10 +153,10 @@ const DashboardPage = () => {
         }
       );
       const { total_received, total_rejected, total_approved } = response.data;
-      console.log("received",response.data)
+      console.log("received", response.data);
       setAcceptedQuantity(total_approved);
       setRejectedQuantity(total_rejected);
-      setReceivedQuantity(total_received)
+      setReceivedQuantity(total_received);
       // setWorkData(projectWorkedPerDay);
       // setProjectData(projectWorked);
       // setRoleData(roles);
@@ -158,7 +168,7 @@ const DashboardPage = () => {
       const response = await axios.post(
         "http://localhost:8000/getEmployeeTimesheetDataWithRole",
         {
-          manager_id: 1, // change with currently logged manager
+          manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
         }
@@ -170,6 +180,37 @@ const DashboardPage = () => {
       // setWorkData(projectWorkedPerDay);
       // setProjectData(projectWorked);
       setRoleData(workedPerDayByRole);
+    } catch (error) {
+      console.error("Error fetching data", error);
+    }
+    try {
+      const response = await axios.post("http://localhost:8000/getLeaveData", {
+        manager_id: employee_id, // change with currently logged manager
+        start_time: start.format("YYYY-MM-DD"),
+        end_time: end.format("YYYY-MM-DD"),
+      });
+      const totL = response.data;
+      setTotalLeaves(totL.leave_records);
+    } catch (error) {
+      console.error("Error fetching data", error);
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/getTopPerformers",
+        {
+          manager_id: employee_id, // change with currently logged manager
+          start_time: start.format("YYYY-MM-DD HH:mm:ss"),
+          end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        }
+      );
+      const topPerformance = response.data;
+      // console.log("here",response.data)
+      // setAcceptedQuantity(team_worked_hrs);
+      // setRejectedQuantity(company_worked_hrs);
+      // setWorkData(projectWorkedPerDay);
+      // setProjectData(projectWorked);
+      setTopPerformers(topPerformance);
     } catch (error) {
       console.error("Error fetching data", error);
     }
@@ -194,7 +235,7 @@ const DashboardPage = () => {
       sx={{ backgroundColor: "#ffffff", marginTop: "0px" }}
     >
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1, color:"black" }}>
+        <Typography variant="h4" sx={{ flexGrow: 1, color: "black" }}>
           Dashboard
         </Typography>
         <Box sx={{ display: "flex", gap: "20px", alignItems: "center" }}>
@@ -229,32 +270,124 @@ const DashboardPage = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Navbar />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "50px",
-        }}
-      >
-        <DonutChartCard
-          accepted={acceptedQuantity}
-          rejected={rejectedQuantity}
-          received={receivedQuantity}
-        />
-        <DonutChartCar2
-          accepted={companyHrs}
-          rejected={teamHrs}
-        />
-        <PieChartCard data={projectData} />
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div style={{ padding: "20px" }}>
-          <LineChart data={workData} />
-        </div>
+      <div style={{ display: "flex" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 2,
+            padding: 2,
+            marginTop: 1,
+            marginLeft: 1,
+          }}
+        >
+          <Card sx={{ width: 300, height: 190 }}>
+            <CardContent>
+              <Typography variant="h5" align="left" sx={{ fontSize: "1.5rem" }}>
+                Team Total Days Off 
+              </Typography>
+              <Typography
+                variant="h3"
+                align="left"
+                sx={{ fontWeight: "bold", fontSize: "4.5rem" }}
+              >
+                {totalLeaves}
+              </Typography>
+            </CardContent>
+          </Card>
 
-        <div style={{ padding: "20px" }}>
-          <BarChartByRole data={roleData} />
-        </div>
+          <Card sx={{ width: 300, height: 220 }}>
+            <CardContent>
+              <Typography variant="h5" align="left" sx={{ fontSize: "1.5rem" }}>
+                Total Team Working Hours
+              </Typography>
+              <Typography
+                variant="h3"
+                align="left"
+                sx={{ fontWeight: "bold", fontSize: "4.5rem" }}
+              >
+                {teamHrs}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <TableContainer
+            component={Paper}
+            sx={{
+              width: 300,
+              height: 240,
+              overflow: "hidden",
+              "&::-webkit-scrollbar": { display: "none" }, // Hide scrollbar for WebKit browsers
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontSize: "1.25rem" }}>
+                    Top Performers
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontSize: "1.25rem" }}>
+                    Hours
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {topPerformers.map((performer, index) => (
+                  <TableRow key={index}>
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      sx={{ fontSize: "1.25rem" }}
+                    >
+                      {performer.employee_name}
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontSize: "1.25rem" }}>
+                      {performer.total_hours}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        <Container sx={{ marginRight: 30, marginTop: 1.5, width: "auto" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              padding: "10px",
+            }}
+          >
+            <DonutChartCard
+              accepted={acceptedQuantity}
+              rejected={rejectedQuantity}
+              received={receivedQuantity}
+            />
+            <DonutChartCar2 companyHours={companyHrs} teamHours={teamHrs} />
+            <PieChartCard data={projectData} />
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "10px",
+            }}
+          >
+            {/* <div style={{ padding: "20px" }}>
+            
+          </div> */}
+            <div style={{ margin: "10px" }}>
+              <LineChart data={workData} />
+            </div>
+
+            {/* <div style={{ padding: "20px" }}> */}
+            <div style={{ margin: "10px" }}>
+              <BarChartByRole data={roleData} />
+            </div>
+          </div>
+        </Container>
       </div>
     </LocalizationProvider>
   );
