@@ -50,7 +50,7 @@ const PieChartCard = ({ data }) => {
     <Card sx={{ width: 350, height: 260, margin: '0 auto', boxShadow: 4, borderRadius: 0 }}>
       <CardContent>
         <Typography variant="h6" component="div" align="center" sx={{ fontSize: '14px', marginBottom: 1 }}>
-          Hours Worked By Project
+          Hours Worked By ProjectID
         </Typography>
         <div style={{ height: '200px', width: '230px', margin: '0 auto' }}>
           <Pie data={chartData} options={options} />

@@ -10,10 +10,15 @@ const AlertList = ({ onClose }) => {
   ]);
   const navigate = useNavigate();
 
+  const storedData = localStorage.getItem("userData");
+  const userState = storedData ? JSON.parse(storedData) : null;
+  const employee_id = userState["emp_id"];
+  const manager_id = userState["manager_id"];
+
   useEffect(()=>{
     const fetchData = async () =>{
         const response = await axios.post("http://localhost:8000/getAlertByEmployee", {
-            emp_id: 1, 
+            emp_id: employee_id, 
         });
         setAlerts(response.data);
     }
@@ -29,14 +34,24 @@ const AlertList = ({ onClose }) => {
   
 
   const handleAlertClick = (alert) => {
-    switch (alert.alt_type) {
+    console.log("alert", alert.type)
+    switch (alert.type) {
       case 1:
-        navigate("/timesheet");
+        navigate("/approvetimesheet");
         break;
       case 2:
-        navigate("/leave");
+        navigate("/leave-approval");
         break;
       case 3:
+        navigate("/ticket-approval");
+        break;
+      case 4:
+        navigate("/timesheet");
+        break;
+      case 5:
+        navigate("/leave");
+        break;
+      case 6:
         navigate("/ticket");
         break;
       default:

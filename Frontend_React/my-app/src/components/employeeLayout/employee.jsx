@@ -24,7 +24,7 @@ import { DataGrid } from '@mui/x-data-grid';
 
 const EmployeeTable = () => {
   const [employees, setEmployees] = useState([]);
-  const currentMonthStart = dayjs().startOf("month");
+  const currentMonthStart = dayjs().month(9).startOf("month");
   const currentMonthEnd = dayjs().endOf("month");
 
   const [startDate, setStartDate] = useState(currentMonthStart);

@@ -5,7 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // import { formatDate } from 'react-datepicker/dist/date_utils';
 
-const Timesheet = ({ employee_id, events, modProjects }) => {
+const Timesheet = ({ employee_id, events, modProjects, setIsDisabledB1, project_id1 }) => {
   const [timesheet, setTimesheet] = useState(null);
   const [latestDate, setLatestDate] = useState(null);
   const storedData = localStorage.getItem("userData");
@@ -13,8 +13,10 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
   // const employee_id = userState["emp_id"];
   const manager_id = userState["manager_id"];
 
+  
+
   // console.log("from timesheet")
-  console.log("events", events);
+  //console.log("events", events);
 
   // const [events, setEvents] = useState([]);
   const [showBusinessOnly, setShowBusinessOnly] = useState(true);
@@ -24,13 +26,20 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
     { title: "Day", width: 40 },
   ]);
 
-  console.log("modProjects1", modProjects);
-  const projects = false
+  //console.log("modProjects1", modProjects);
+  // modProjects[0].id=1
+  // useEffect(()=>{
+  //   if(modProjects.length>0 && modProjects[0]!==null && modProjects[0].id!==null){
+  //     modProjects[0].id=1
+  //   }
+  // },[modProjects])
+  
+  const projects = modProjects.length>0
     ? modProjects
     : [
-        { id: 1, name: "Project A", color: "#38761d" },
-        { id: 2, name: "Project B", color: "#0d8ecf" },
-        { id: 3, name: "Project C", color: "#f1c232" },
+        { id: 12, name: "Project A", color: "#38761d" },
+        { id: 290092, name: "Project B", color: "#0d8ecf" },
+        { id: 394940, name: "Project C", color: "#f1c232" },
       ];
 
   const currentDate = new Date();
@@ -43,7 +52,7 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
 
   // Convert time difference from milliseconds to days
   const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-  console.log("daysDifference", daysDifference)
+  //console.log("daysDifference", daysDifference)
 
   const config = {
     locale: "en-us",
@@ -57,8 +66,12 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
       }
     },
     onBeforeEventRender: (args) => {
+      if(modProjects.length==0){
+        return
+      }
       const duration = new DayPilot.Duration(args.data.start, args.data.end);
-      const project = projects.find((p) => p.id === args.data.project);
+      const project = projects.find((p) => (p.id == args.data.project));
+      //console.log("new log",args.data.project)
       args.data.barColor = project.color;
       args.data.areas = [
         {
@@ -104,7 +117,7 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
       const date1 = new Date(args.e.data.end);
       const date2 = new Date(latestDate); // No 'T' in date2
 
-      console.log("latest_date", args.e.data.manager_id);
+      //console.log("latest_date", args.e.data.manager_id);
       if (args.e.data.status==2) {
         toast.error("Already Approved can't delete");
         args.preventDefault();
@@ -115,17 +128,17 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
     },
     onEventDeleted: async function (args) {
       // AJAX call to the server, this example uses jQuery
-      console.log("timesheet_id ", args.e.id());
+      //console.log("timesheet_id ", args.e.id());
       const response = await axios.delete(
         "http://localhost:8000/deleteSingleTimesheetEntry",
         {
           data: { emp_id: employee_id, timesheet_id: args.e.id() },
         }
       );
-      console.log("delete response", response.data);
+      //console.log("delete response", response.data);
     },
     onTimeRangeSelected: async (args) => {
-      console.log("clicked");
+      //console.log("clicked");
       // if (employee_id !== 1) return; // Change 1 to currently logged in user
       const timesheet = args.control;
       const timesheet_id = Math.floor(Math.random() * 1000000);
@@ -161,8 +174,8 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
         return;
       }
       timesheet.events.add(modal.result);
-      console.log("Modal Result", modal.result);
-      console.log(events);
+      //console.log("Modal Result", modal.result);
+      //console.log(events);
 
       const formData = {
         timesheet_id: timesheet_id,
@@ -177,12 +190,15 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
       axios
         .post("http://localhost:8000/postTimesheetDataByUser", formData)
         .then((response) => {
-          console.log("Response:", response.data);
+          //console.log("Response:", response.data);
           // Handle the response data here
         });
-      console.log(formData);
+      //console.log(formData);
+      setIsDisabledB1(false)
     },
   };
+
+  
 
   useEffect(() => {
     if (!timesheet) {
@@ -251,7 +267,7 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
 
   return (
     <div>
-      <ToastContainer />
+      {/* <ToastContainer /> */}
       <div className={"toolbar"}>
         <div className={"toolbar-item"}>
           <label>

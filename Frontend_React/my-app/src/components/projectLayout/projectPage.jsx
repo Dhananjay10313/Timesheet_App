@@ -170,7 +170,9 @@ import {
   TableRow,
   TableContainer,
   Paper,
+  Container
 } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -214,7 +216,7 @@ const ProjectForm = () => {
           setProjects(response.data);
         });
 
-      console.log("Employee ID", employee_id);
+      //console.log("Employee ID", employee_id);
       await axios
         .post("http://localhost:8000/getEmployeeInfoByManger", {
           manager_id: employee_id,
@@ -239,7 +241,7 @@ const ProjectForm = () => {
   };
 
   useEffect(() => {
-    console.log("projects initial", projects);
+    //console.log("projects initial", projects);
   }, []);
 
   const handleSubmit = async () => {
@@ -252,7 +254,7 @@ const ProjectForm = () => {
       deadline: deadline.format("YYYY-MM-DD"),
       employeeCount: selectedEmployees.length,
     };
-    console.log("projectData", projectData);
+    //console.log("projectData", projectData);
 
     if (isEditing) {
       // Dummy PUT request to update the existing project
@@ -295,20 +297,20 @@ const ProjectForm = () => {
           project.id === updatedProject.id
             ? { ...project, ...updatedProject }
             : project;
-          project.id === updatedProject.id ? console.log("herererer") : 0;
+          // project.id === updatedProject.id ? console.log("herererer") : 0;
         });
         setProjectsi(newProjects);
       };
 
       updateProjectf(updatedProject);
-      console.log("projectsi", projectsi);
+      //console.log("projectsi", projectsi);
 
       resetForm();
       // });
     } else {
       const newProjectId = projects.length + 1;
 
-      console.log("Selected Employees List", selectedEmployees);
+      //console.log("Selected Employees List", selectedEmployees);
 
       await axios
         .post("http://localhost:8000/addProjectData", {
@@ -317,12 +319,12 @@ const ProjectForm = () => {
           description,
           start_date: startTime.format("YYYY-MM-DD"),
           deadline: deadline.format("YYYY-MM-DD"),
-          employee_count: selectedEmployees.length+1,
+          employee_count: selectedEmployees.length + 1,
           manager_id: employee_id,
         })
         .then((response) => {
           setProjects([...projects, { ...projectData, id: strProjectId }]);
-          console.log(response.data);
+          //console.log(response.data);
           resetForm();
         });
 
@@ -344,7 +346,7 @@ const ProjectForm = () => {
       });
 
       // axios.post("/api/project-employees", employeeData).then(() => {
-      console.log("Employees added to project:", employeeData);
+      //console.log("Employees added to project:", employeeData);
       // });
     }
   };
@@ -377,8 +379,28 @@ const ProjectForm = () => {
     setSelectedProjectId(null);
   };
 
+  const columns = [
+    { field: "project_id", headerName: "ID", width: 130 },
+    { field: "name", headerName: "Name", width: 210 },
+    { field: "description", headerName: "Description", width: 250 },
+    { field: "startTime", headerName: "Start Date", width: 180 },
+    { field: "deadline", headerName: "Deadline", width: 180 },
+    { field: "employeeCount", headerName: "No. of Employees", width: 150 },
+  ];
+
+  const rows = projects.map((project, index) => ({
+    id: project.project_id,
+    project_id: project.project_id,
+    name: project.name,
+    description: project.description,
+    startTime: project.startTime,
+    deadline: project.deadline,
+    employeeCount: project.employeeCount,
+  }));
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Container style={{ height: "auto", width: "auto", marginTop: "2px" }}>
       <div style={{ padding: "20px" }}>
         <h2>{isEditing ? "Edit Project" : "Add New Project"}</h2>
 
@@ -468,39 +490,21 @@ const ProjectForm = () => {
             </Button>
           )}
         </div>
-
-        <h3 style={{ marginTop: "40px" }}>Project List</h3>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Start Time</TableCell>
-                <TableCell>Deadline</TableCell>
-                <TableCell>No. of Employees</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {projects.map((project, index) => (
-                <TableRow
-                  key={project.id}
-                  onClick={() => handleProjectSelect(project)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <TableCell>{project.project_id}</TableCell>
-                  <TableCell>{project.name}</TableCell>
-                  <TableCell>{project.description}</TableCell>
-                  <TableCell>{project.startTime}</TableCell>
-                  <TableCell>{project.deadline}</TableCell>
-                  <TableCell>{project.employeeCount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        
+        <div style={{ height: "auto", width: "100%", marginLeft: "0px" , marginTop: "50px"}}>
+        <h2 >Project List</h2>
+          <Paper style={{ height: "auto", width: "100%",  maxHeight: '400px'}}>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              pageSize={5}
+              rowsPerPageOptions={[5]}
+              // onRowClick={(params) => handleProjectSelect(params.row)}
+            />
+          </Paper>
+        </div>
       </div>
+      </Container>
     </LocalizationProvider>
   );
 };

@@ -27,8 +27,8 @@ import {
 const Timesheet = ({ employee_id, events, modProjects }) => {
   const [timesheet, setTimesheet] = useState(null);
 
-  // console.log("from timesheet")
-  console.log("events", events);
+  // //console.log("from timesheet")
+  //console.log("events", events);
 
   // const [events, setEvents] = useState([]);
   const [showBusinessOnly, setShowBusinessOnly] = useState(true);
@@ -38,14 +38,35 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
     { title: "Day", width: 40 },
   ]);
 
-  console.log("modProjects1", modProjects);
-  const projects = false
+  //console.log("modProjects1", modProjects);
+ 
+  //console.log("modProjects1", modProjects);
+  // modProjects[0].id=1
+  // useEffect(()=>{
+  //   if(modProjects.length>0 && modProjects[0]!==null && modProjects[0].id!==null){
+  //     modProjects[0].id=1
+  //   }
+  // },[modProjects])
+  
+  const projects = modProjects.length>0
     ? modProjects
     : [
-        { id: 1, name: "Project A", color: "#38761d" },
-        { id: 2, name: "Project B", color: "#0d8ecf" },
-        { id: 3, name: "Project C", color: "#f1c232" },
+        { id: 12, name: "Project A", color: "#38761d" },
+        { id: 290092, name: "Project B", color: "#0d8ecf" },
+        { id: 394940, name: "Project C", color: "#f1c232" },
       ];
+
+  const currentDate = new Date();
+
+  // Target date (October 1, 2024)
+  const targetDate = new Date("2024-10-01");
+
+  // Calculate the difference in time
+  const timeDifference = currentDate - targetDate;
+
+  // Convert time difference from milliseconds to days
+  const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+  //console.log("daysDifference", daysDifference)
 
   const config = {
     locale: "en-us",
@@ -59,8 +80,12 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
       }
     },
     onBeforeEventRender: (args) => {
+      if(modProjects.length==0){
+        return
+      }
       const duration = new DayPilot.Duration(args.data.start, args.data.end);
-      const project = projects.find((p) => p.id === args.data.project);
+      const project = projects.find((p) => (p.id == args.data.project));
+      //console.log("new log",args.data.project)
       args.data.barColor = project.color;
       args.data.areas = [
         {
@@ -90,7 +115,7 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
     cellDuration: 30,
     eventHeight: 40,
     heightSpec: "Max",
-    height: 463,
+    height: 473,
     days: 31,
     viewType: "Days",
     startDate: "2024-10-01",
@@ -131,8 +156,8 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
         return;
       }
       timesheet.events.add(modal.result);
-      console.log(modal.result.end.value);
-      console.log(events);
+      //console.log(modal.result.end.value);
+      //console.log(events);
 
       const formData = {
         task_name: modal.result.text,
@@ -146,10 +171,10 @@ const Timesheet = ({ employee_id, events, modProjects }) => {
       axios
         .post("http://localhost:8000/postTimesheetDataByUser", formData)
         .then((response) => {
-          console.log("Response:", response.data);
+          //console.log("Response:", response.data);
           // Handle the response data here
         });
-      console.log(formData);
+      //console.log(formData);
     },
   };
 

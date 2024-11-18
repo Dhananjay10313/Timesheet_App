@@ -17,8 +17,8 @@ const GaugeChartCard = ({ companyHours, teamHours }) => {
               {
                 type: 'indicator',
                 mode: 'gauge+number',
-                value: percentage,
-                // title: { text: 'Team Working Hours (%)', font: { size: 24 } },
+                value: percentage ,
+                title: { text: 'Team Working Hours (%) Compared to Department', font: { size: 12 } },
                 gauge: {
                   axis: { range: [0, 100], tickwidth: 1, tickcolor: 'darkblue' },
                   bar: { color: 'darkblue' },
@@ -44,6 +44,7 @@ const GaugeChartCard = ({ companyHours, teamHours }) => {
               paper_bgcolor: 'white',
               font: { color: 'darkblue', family: 'Arial' },
             }}
+            config={{ displayModeBar: false }}
           />
         </div>
       </CardContent>

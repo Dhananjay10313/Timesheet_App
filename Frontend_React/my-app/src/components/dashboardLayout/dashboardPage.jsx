@@ -30,7 +30,7 @@ import dayjs from "dayjs";
 import { useAuth } from "../provider/authProvider";
 
 const DashboardPage = () => {
-  const currentMonthStart = dayjs().startOf("month");
+  const currentMonthStart = dayjs().month(9).startOf("month");
   const currentMonthEnd = dayjs().endOf("month");
 
   const [startDate, setStartDate] = useState(currentMonthStart);
@@ -78,9 +78,10 @@ const DashboardPage = () => {
   const userState = storedData ? JSON.parse(storedData) : null;
   const employee_id = userState["emp_id"];
   const manager_id = userState["manager_id"];
+  const [pendingTickets, setPendingTickets] = useState(0);
 
   // const { token, userState } = useAuth();
-  console.log("kdksksjd", userState);
+  //console.log("kdksksjd", userState);
 
   const fetchData = async (start, end) => {
     try {
@@ -90,6 +91,12 @@ const DashboardPage = () => {
           manager_id: employee_id,
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const { team_worked_hrs, company_worked_hrs } = response.data;
@@ -110,6 +117,12 @@ const DashboardPage = () => {
           manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const totalProjectWorked = response.data;
@@ -130,6 +143,12 @@ const DashboardPage = () => {
           manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const projectWorkedPerDay = response.data;
@@ -150,10 +169,16 @@ const DashboardPage = () => {
           manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const { total_received, total_rejected, total_approved } = response.data;
-      console.log("received", response.data);
+      //console.log("received", response.data);
       setAcceptedQuantity(total_approved);
       setRejectedQuantity(total_rejected);
       setReceivedQuantity(total_received);
@@ -171,6 +196,12 @@ const DashboardPage = () => {
           manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const workedPerDayByRole = response.data;
@@ -184,11 +215,20 @@ const DashboardPage = () => {
       console.error("Error fetching data", error);
     }
     try {
-      const response = await axios.post("http://localhost:8000/getLeaveData", {
-        manager_id: employee_id, // change with currently logged manager
-        start_time: start.format("YYYY-MM-DD"),
-        end_time: end.format("YYYY-MM-DD"),
-      });
+      const response = await axios.post(
+        "http://localhost:8000/getLeaveData",
+        {
+          manager_id: employee_id, // change with currently logged manager
+          start_time: start.format("YYYY-MM-DD"),
+          end_time: end.format("YYYY-MM-DD"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       const totL = response.data;
       setTotalLeaves(totL.leave_records);
     } catch (error) {
@@ -202,6 +242,12 @@ const DashboardPage = () => {
           manager_id: employee_id, // change with currently logged manager
           start_time: start.format("YYYY-MM-DD HH:mm:ss"),
           end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       const topPerformance = response.data;
@@ -214,14 +260,39 @@ const DashboardPage = () => {
     } catch (error) {
       console.error("Error fetching data", error);
     }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/getPendingTickets",
+        {
+          emp_id: employee_id,
+          start_time: start.format("YYYY-MM-DD HH:mm:ss"),
+          end_time: end.format("YYYY-MM-DD HH:mm:ss"),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const cnt = response.data;
+      // console.log("here",response.data)
+      setPendingTickets(cnt);
+      // setWorkData(work);
+      // setProjectData(projects);
+      // setRoleData(roles);
+    } catch (error) {
+      console.error("Error fetching data", error);
+    }
   };
 
   useEffect(() => {
-    console.log(
-      "Dates",
-      typeof startDate.format("YYYY-MM-DD HH:mm:ss"),
-      endDate
-    );
+    // console.log(
+    //   "Dates",
+    //   typeof startDate.format("YYYY-MM-DD HH:mm:ss"),
+    //   endDate
+    // );
     fetchData(startDate, endDate);
   }, []);
 
@@ -251,6 +322,7 @@ const DashboardPage = () => {
             label="End Date"
             value={endDate}
             onChange={(newDate) => setEndDate(newDate)}
+            minDate={startDate}
             renderInput={(params) => (
               <TextField {...params} sx={{ input: { color: "#fff" } }} />
             )}
@@ -282,32 +354,47 @@ const DashboardPage = () => {
             marginLeft: 1,
           }}
         >
-          <Card sx={{ width: 300, height: 190 }}>
+          <Card sx={{ width: 300, height: 140 }}>
             <CardContent>
               <Typography variant="h5" align="left" sx={{ fontSize: "1.5rem" }}>
-                Team Total Days Off 
+                Team Total Days Off
               </Typography>
               <Typography
                 variant="h3"
                 align="left"
-                sx={{ fontWeight: "bold", fontSize: "4.5rem" }}
+                sx={{ fontWeight: "bold", fontSize: "3.8rem" }}
               >
                 {totalLeaves}
               </Typography>
             </CardContent>
           </Card>
 
-          <Card sx={{ width: 300, height: 220 }}>
+          <Card sx={{ width: 300, height: 140 }}>
             <CardContent>
-              <Typography variant="h5" align="left" sx={{ fontSize: "1.5rem" }}>
+              <Typography variant="h5" align="left" sx={{ fontSize: "1.2rem" }}>
                 Total Team Working Hours
               </Typography>
               <Typography
                 variant="h3"
                 align="left"
-                sx={{ fontWeight: "bold", fontSize: "4.5rem" }}
+                sx={{ fontWeight: "bold", fontSize: "3.8rem" }}
               >
                 {teamHrs}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ width: 300, height: 130 }}>
+            <CardContent>
+              <Typography variant="h5" align="left" sx={{ fontSize: "1.2rem" }}>
+                Your Pending Tickets
+              </Typography>
+              <Typography
+                variant="h3"
+                align="left"
+                sx={{ fontWeight: "bold", fontSize: "3.8rem" }}
+              >
+                {pendingTickets}
               </Typography>
             </CardContent>
           </Card>
@@ -316,7 +403,7 @@ const DashboardPage = () => {
             component={Paper}
             sx={{
               width: 300,
-              height: 240,
+              height: 230,
               overflow: "hidden",
               "&::-webkit-scrollbar": { display: "none" }, // Hide scrollbar for WebKit browsers
             }}

@@ -12,6 +12,12 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import AlertList from "./AlertList";
 import { useAuth } from "./provider/authProvider";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 const Navbar = ({ Authenticate, toggleSidebar }) => {
   const { setUserState } = useAuth();
@@ -28,7 +34,10 @@ const Navbar = ({ Authenticate, toggleSidebar }) => {
   const handleLogoutClick = () => {
     Authenticate();
     setUserState(null);
+    // <Navigate to={"/login"}/>
     localStorage.removeItem("token");
+    localStorage.removeItem("userData");
+    
   };
 
   const open = Boolean(anchorEl);

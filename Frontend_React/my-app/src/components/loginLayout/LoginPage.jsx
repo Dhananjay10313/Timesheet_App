@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Button, Container, Row, Col, Card } from "react-bootstrap";
 import axios from "axios";
 import { useAuth } from '../provider/authProvider';
+import { ToastContainer, toast } from "react-toastify";
 import './LoginForm.css'; // Import custom CSS for additional styling
 
 function LoginForm({ Authenticate }) {
@@ -10,10 +11,15 @@ function LoginForm({ Authenticate }) {
 
     const { userState, setUserState, setToken } = useAuth();
 
+    useEffect(() => {
+        console.log("userState2", userState);
+
+    }, [userState]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Username:", username);
-        console.log("Password:", password);
+        //console.log("Username:", username);
+        //console.log("Password:", password);
 
         try {
             const response = await axios.post(
@@ -24,12 +30,12 @@ function LoginForm({ Authenticate }) {
                 }
             );
 
-            Authenticate();
-            console.log(response.data);
+            //console.log(response.data);
             const token = response.data.access_token;
             localStorage.setItem('token', token);
-            console.log("tokeeen", localStorage.getItem('token'));
+            //console.log("tokeeen", localStorage.getItem('token'));
             setToken(token);
+            
 
             const ret1 = await axios.post(
                 "http://localhost:8000/getUserInfo",
@@ -45,22 +51,25 @@ function LoginForm({ Authenticate }) {
                 }
             );
 
+            
             const data = ret1.data;
             localStorage.setItem('userData', JSON.stringify(data));
-            console.log(ret1.data);
+            //console.log(ret1.data);
             setUserState(ret1.data);
-            console.log("userState1", userState);
+            //console.log("userState1", userState);
+            localStorage.setItem("bnStatus", JSON.stringify(false))
+            Authenticate();
+            
         } catch (error) {
             console.error("Error during authentication:", error);
+            toast.error("Invalid Credentials");
         }
     };
 
-    useEffect(() => {
-        console.log("userState2", userState);
-    }, [userState]);
-
     return (
+        
         <Container className="login-container">
+            <ToastContainer />
             <Row className="justify-content-md-center">
                 <Col md={6} lg={4}>
                     <Card className="login-card">
@@ -68,10 +77,10 @@ function LoginForm({ Authenticate }) {
                             <Card.Title className="text-center">Login</Card.Title>
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group controlId="formBasicEmail">
-                                    <Form.Label>Username</Form.Label>
+                                    <Form.Label>Employee ID</Form.Label>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Enter username"
+                                        placeholder="Enter Employee ID"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                     />

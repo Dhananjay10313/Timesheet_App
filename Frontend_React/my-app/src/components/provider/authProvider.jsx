@@ -4,8 +4,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
-  const [token, setToken_] = useState("localStorage.getItem(\"token\")");
+  const [token, setToken_] = useState("k");
   const [userState,setUserState_] = useState({"uid":1})
+  const [route,setRoute] = useState("/dashboard")
 
   const setToken = (newToken) => {
     setToken_(newToken);
@@ -25,9 +26,11 @@ const AuthProvider = ({ children }) => {
   //   }
   // }, [token]);
 
+  // console.log({ token, userState, route }); // Debugging line
+
   
   return (
-    <AuthContext.Provider value={{token, setToken, userState, setUserState}}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{token, setToken, userState, setUserState, route, setRoute}}>{children}</AuthContext.Provider>
   );
 };
 

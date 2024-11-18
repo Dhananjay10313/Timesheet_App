@@ -16,7 +16,7 @@ class Employee(Base):
     # Consider using a more secure password hashing mechanism
     password = Column(String)  # Placeholder for hashed password
     manager_id = Column(Integer)
-    department_id = Column(Integer, ForeignKey("department.dep_id"))
+    department_id = Column(Integer)
     created_by = Column(Integer)
     created_date = Column(Date)
     modified_by = Column(Integer)
@@ -24,7 +24,7 @@ class Employee(Base):
     isactive = Column(Boolean)
     ismanager= Column(Integer)
 
-    Departments = relationship("Department", backref="Employee")
+    # Departments = relationship("Department", backref="Employee")
 
     # aux_emp=relationship("EmployeeProjects", backref="Employee")
 
@@ -42,7 +42,7 @@ class Department(Base):
     modify_date = Column(Date)
     isactive = Column(Boolean)
 
-    employees = relationship("Employee", backref="Department")
+    # employees = relationship("Employee", backref="Department")
 
 
 
@@ -166,6 +166,7 @@ class Ticket(Base):
     creator_id = Column(Integer) #ForeignKey("employee.empid")
     project_id = Column(Integer) #ForeignKey("employee.empid")
     ref_employee_id = Column(Integer) #ForeignKey("employee.empid")
+    closing_comments = Column(String)
     created_by = Column(Integer)
     created_date = Column(Date)
     modified_by = Column(Integer)
@@ -175,7 +176,8 @@ class Ticket(Base):
 class typeOfLeave(Base):
     __tablename__ = "typeOfLeave"
 
-    t_id = Column(Integer, primary_key=True)
+    tlid = Column(Integer,primary_key=True)
+    t_id = Column(Integer)
     t_name = Column(String)
     t_days = Column(Integer)
     created_by = Column(Integer)

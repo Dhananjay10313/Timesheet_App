@@ -6,11 +6,6 @@
 }
 
 .sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background-color: #1c1c1e; /* Dark background for sidebar */
-  position: fixed; /* Fixed to the left of the screen */
-  height: 100vh; /* Full height */
   top: 64px; /* Adjust to ensure it stays below the Navbar */
 }
 
